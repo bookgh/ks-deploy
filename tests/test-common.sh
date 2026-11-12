@@ -50,7 +50,10 @@ KS_DRY_RUN=false
 KS_LOCK_FILE="$work/state/deploy.lock"
 ks_acquire_lock
 [[ -f "$KS_LOCK_FILE" ]] || fail '互斥锁文件未创建'
-if (KS_LOCK_FD=""; ks_acquire_lock) 2>/dev/null; then
+if (
+    KS_LOCK_FD=""
+    ks_acquire_lock
+) 2>/dev/null; then
     fail '并发部署应无法获取已持有的锁'
 fi
 pass '部署互斥锁拒绝并发执行'
@@ -64,3 +67,4 @@ ks_acquire_lock >/dev/null 2>&1 || fail 'Dry-run lock wrapper failed'
 [[ ! -e "$work/dry-run-marker" && ! -e "$work/download" ]] || fail 'Dry-run 产生文件副作用'
 [[ ! -e "$work/dry-run" ]] || fail 'Dry-run 创建锁文件或目录'
 pass 'Dry-run 不写文件，且不调用 SSH/HTTP'
+
