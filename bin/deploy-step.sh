@@ -29,6 +29,9 @@ done
     exit 2
 }
 ks_init "${init_args[@]}"
+if [[ "${KS_LOCK_HELD:-false}" != true ]]; then
+    ks_acquire_lock
+fi
 
 case "$step" in
     prepare) script=00-prepare-install-node.sh ;;

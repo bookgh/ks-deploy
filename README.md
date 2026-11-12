@@ -2,7 +2,7 @@
 
 > Rocky Linux 9 / amd64 的 Kubernetes 原生二进制部署框架。目标 Kubernetes 版本：`v1.37.2`。禁止使用 kubeadm、k3s、RKE 等集群封装工具。
 
-**当前阶段：M0 已完成；M1 安装节点准备与依赖调度器进行中。** 公共库、依赖顺序调度入口和 `scripts/00-prepare-install-node.sh` 已提供基础实现：固定校验 Caddy 制品与 Sigstore 签名、配置 systemd HTTP 服务。其他阶段脚本尚未实现；这不代表 Kubernetes 集群部署、离线制品闭包或 Rocky Linux 9 实机验收已经完成。
+**当前阶段：M0 已完成；M1 安装节点准备与依赖调度器进行中。** 公共库含基于 `flock` 的部署互斥和无副作用 Dry-run；依赖顺序调度入口和 `scripts/00-prepare-install-node.sh` 已提供基础实现：固定校验 Caddy 制品与 Sigstore 签名、配置 systemd HTTP 服务。其他阶段脚本尚未实现；这不代表 Kubernetes 集群部署、离线制品闭包或 Rocky Linux 9 实机验收已经完成。
 
 ## 文档导航
 

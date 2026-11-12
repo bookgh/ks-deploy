@@ -5,6 +5,7 @@ KS_DRY_RUN="false"
 KS_TOTAL_STEPS="0"
 KS_CURRENT_STEP="0"
 KS_LOG_FILE=""
+KS_LOCK_FD=""
 declare -Ag KS_CONFIG=()
 
 ks_init() {
@@ -244,4 +245,28 @@ ks_backup_file() {
     fi
     cp -a -- "$file" "$backup"
     ks_info "已备份：$backup"
+}
+
+ks_acquire_lock() {
+    local lock_file="${1:-${KS_LOCK_FILE:-${TMPDIR:-/tmp}/ks-deploy.lock}}"
+    if [[ "$KS_DRY_RUN" == true ]]; then
+        ks_info "Dry-run：跳过部署互斥锁 $lock_file"
+        return 0
+    fi
+    command -v flock >/dev/null 2>&1 || {
+        ks_die "缺少 flock，无法保证部署互斥"
+        return 1
+    }
+    install -d -m 0700 -- "$(dirname -- "$lock_file")"
+    [[ ! -L "$lock_file" ]] || {
+        ks_die "拒绝跟随锁文件符号链接：$lock_file"
+        return 1
+    }
+    exec {KS_LOCK_FD}>>"$lock_file"
+    chmod 0600 -- "$lock_file"
+    if ! flock -n "$KS_LOCK_FD"; then
+        ks_die "已有部署流程持有锁：$lock_file"
+        return 1
+    fi
+    ks_info "已获得部署互斥锁：$lock_file"
 }

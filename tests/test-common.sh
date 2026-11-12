@@ -46,9 +46,21 @@ if ks_http_download file:///etc/passwd "$work/download" ba7816bf8f01cfea414140de
 fi
 pass 'SHA256 正确匹配且拒绝不匹配'
 
+KS_DRY_RUN=false
+KS_LOCK_FILE="$work/state/deploy.lock"
+ks_acquire_lock
+[[ -f "$KS_LOCK_FILE" ]] || fail '互斥锁文件未创建'
+if (KS_LOCK_FD=""; ks_acquire_lock) 2>/dev/null; then
+    fail '并发部署应无法获取已持有的锁'
+fi
+pass '部署互斥锁拒绝并发执行'
+
 KS_DRY_RUN=true
 ks_run touch "$work/dry-run-marker" >/dev/null || fail 'Dry-run command wrapper failed'
 ks_http_download https://example.invalid/payload "$work/download" ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad >/dev/null 2>&1 || fail 'Dry-run HTTP wrapper failed'
 ks_ssh_exec 192.0.2.10 1 5 /bin/true >/dev/null 2>&1 || fail 'Dry-run SSH wrapper failed'
+KS_LOCK_FILE="$work/dry-run/lock"
+ks_acquire_lock >/dev/null 2>&1 || fail 'Dry-run lock wrapper failed'
 [[ ! -e "$work/dry-run-marker" && ! -e "$work/download" ]] || fail 'Dry-run 产生文件副作用'
+[[ ! -e "$work/dry-run" ]] || fail 'Dry-run 创建锁文件或目录'
 pass 'Dry-run 不写文件，且不调用 SSH/HTTP'

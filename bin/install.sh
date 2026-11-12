@@ -13,6 +13,8 @@ CONFIG_CHARTS="${CONFIG_CHARTS:-$ROOT/charts.yaml}"
 [[ -r "$CONFIG_ENV" ]] || ks_die "找不到运行配置：$CONFIG_ENV（请从 cluster.env.example 复制）"
 python3 "$ROOT/tools/validate_config.py" --env "$CONFIG_ENV" --versions "$CONFIG_VERSIONS" --charts "$CONFIG_CHARTS"
 ks_config_load "$CONFIG_ENV"
+ks_acquire_lock
+export KS_LOCK_HELD=true
 
 # 依赖顺序与脚本编号不同：Master CRI 在控制面前，Worker API 代理在 kubelet 前。
 steps=(prepare init pki harbor etcd runtime control-plane worker-proxy kubelet addons check)

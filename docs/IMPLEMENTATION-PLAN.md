@@ -28,7 +28,7 @@
 ## M1：公共执行框架、安装节点和 Caddy
 
 **范围**
-- [~] bin/common.sh：日志、颜色、进度、错误 trap、Dry-run、备份、SHA256；锁尚未实现
+- [~] bin/common.sh：日志、颜色、进度、错误 trap、Dry-run、备份、SHA256、flock 部署互斥锁
 - [~] bin/install.sh 与 bin/deploy-step.sh 依赖顺序编排骨架
 - [ ] SSH executor：超时、有限重试、HostKey 校验、远端安全命令执行
 - [~] 00-prepare-install-node.sh：校验并部署锁定 Caddy 制品；SSH key 管理与实机验收未完成
@@ -43,7 +43,9 @@
 - 文件只通过 HTTP 分发，不使用 SCP/rsync。
 - Caddy 由 Systemd 托管，安装节点端口可达性检查通过。
 
-当前 M1 尚未达到验收完成：公共函数库、依赖顺序调度骨架和安装节点准备脚本已实现；其余阶段脚本尚未实现。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy systemd 行为尚无 Rocky 9 集成验证；不得把 M1 标为完成。
+当前 M1 尚未达到验收完成：公共函数库、依赖顺序调度骨架、部署互斥锁和安装节点准备脚本已实现；其余阶段脚本尚未实现。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy systemd 行为尚无 Rocky 9 集成验证；不得把 M1 标为完成。
+
+互斥锁使用 `flock` 锁定本地配置的 `KS_LOCK_FILE`（默认 `/tmp/ks-deploy.lock`），一键流程持锁贯穿子步骤；独立分步入口也会获取同一把锁。Dry-run 不创建锁目录或文件。自动化测试覆盖并发拒绝和 Dry-run 无文件副作用。
 
 版本解析准备：已从 Caddy 官方 Release `v2.11.9` 固定 amd64 tarball、checksum 清单、Sigstore 签名和证书的 URL 与 SHA256。准备脚本要求 cosign 验证两个签名的证书身份/发行者，再以已签名的 checksum 清单比对 tarball 哈希；组件 source URL 缺少 SHA256 时配置校验失败。哈希来自 GitHub 官方 Release API 资产 digest。
 
