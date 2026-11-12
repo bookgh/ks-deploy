@@ -65,21 +65,39 @@ ks_progress() {
 
 ks_config_load() {
     local file="$1" line key value line_no=0
-    [[ -r "$file" ]] || ks_die "配置文件不可读：$file"
+    if [[ ! -r "$file" ]]; then
+        ks_die "配置文件不可读：$file"
+        return 1
+    fi
     KS_CONFIG=()
     while IFS= read -r line || [[ -n "$line" ]]; do
         line_no=$((line_no + 1))
         [[ -z "$line" || "$line" == \#* ]] && continue
-        [[ "$line" == *=* ]] || ks_die "$file:$line_no：要求 KEY=value"
+        if [[ "$line" != *=* ]]; then
+            ks_die "$file:$line_no：要求 KEY=value"
+            return 1
+        fi
         key="${line%%=*}"
         value="${line#*=}"
-        [[ "$key" =~ ^[A-Z][A-Z0-9_]*$ ]] || ks_die "$file:$line_no：非法配置键：$key"
+        if [[ ! "$key" =~ ^[A-Z][A-Z0-9_]*$ ]]; then
+            ks_die "$file:$line_no：非法配置键：$key"
+            return 1
+        fi
         case "$key" in
             CLUSTER_NAME|INSTALL_NODE_IP|MASTER_NODES|WORKER_NODES|SSH_USER|SSH_PORT|CADDY_BIND|CADDY_PORT|CADDY_ROOT|POD_CIDR|SERVICE_CIDR|CLUSTER_DNS|CLUSTER_DOMAIN|NODELOCAL_DNS_IP|CONTAINER_RUNTIME|PROXY_MODE|IMAGE_MODE|OFFLINE_MODE|HARBOR_ENABLED|HARBOR_NODE_IP|HARBOR_DOMAIN|HARBOR_SCHEME|HARBOR_PROJECT|SELINUX_DISABLE|FIREWALLD_UNINSTALL|PKI_DIR|ARTIFACTS_ROOT|KUBELET_ROOT|CONTAINERD_ROOT|DOCKER_ROOT|ETCD_DATA_DIR) ;;
-            *) ks_die "$file:$line_no：未知配置键：$key" ;;
+            *)
+                ks_die "$file:$line_no：未知配置键：$key"
+                return 1
+                ;;
         esac
-        [[ "$value" != *'$('* && "$value" != *'`'* && "$value" != *';'* ]] || ks_die "$file:$line_no：配置值包含不允许的 Shell 语法"
-        [[ -z "${KS_CONFIG[$key]+present}" ]] || ks_die "$file:$line_no：重复配置键：$key"
+        if [[ "$value" == *'$('* || "$value" == *'`'* || "$value" == *';'* ]]; then
+            ks_die "$file:$line_no：配置值包含不允许的 Shell 语法"
+            return 1
+        fi
+        if [[ -n "${KS_CONFIG[$key]+present}" ]]; then
+            ks_die "$file:$line_no：重复配置键：$key"
+            return 1
+        fi
         KS_CONFIG["$key"]="$value"
     done <"$file"
 }
