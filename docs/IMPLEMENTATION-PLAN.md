@@ -12,18 +12,18 @@
 ## M0：仓库基础与工程规范
 
 **范围**
-- [ ] .gitignore（排除 pki、artifacts、output、state、kubeconfig、私钥和凭据）
-- [ ] cluster.env.example
-- [ ] versions.yaml
-- [ ] charts.yaml
-- [ ] 配置 schema / 校验器
-- [ ] ShellCheck、shfmt、bash -n 基础 CI
-- [ ] 测试目录和贡献/开发说明
+- [x] .gitignore（排除 pki、artifacts、output、state、kubeconfig、私钥和凭据）
+- [x] cluster.env.example
+- [x] versions.yaml
+- [x] charts.yaml
+- [x] 配置 schema / 校验器（严格 KEY=value 解析、YAML 唯一键、类型/枚举/网络/版本/来源校验）
+- [x] ShellCheck、shfmt、bash -n 基础 CI
+- [x] 测试目录和贡献/开发说明
 
 **验收**
-- 配置缺项、未知值、重复节点 IP、非法 CIDR、版本空值能明确失败。
-- 真实 secret 不会被提交。
-- shellcheck/shfmt/baseline tests 在 CI 通过。
+- [x] 配置缺项、未知值、重复节点 IP、非法 CIDR、版本空值能明确失败。
+- [x] 真实 secret 不会被提交（忽略规则覆盖运行配置、PKI、制品、输出、状态、kubeconfig、私钥和 token）。
+- [!] shellcheck/shfmt/baseline tests 的 GitHub Actions 结果待本次提交后核验；本地 Python 与 Bash 可执行测试已通过。
 
 ## M1：公共执行框架、安装节点和 Caddy
 
@@ -170,9 +170,19 @@
 
 ## 当前进度
 
+### M0 - 2026-11-12
+- 状态：核心实现已完成；本地配置校验、15 项单元测试、CLI 正反向 smoke test 与 Bash 语法检查通过。GitHub Actions 远端运行结果待提交后核验。
+- 变更文件：`.gitignore`、`cluster.env.example`、`versions.yaml`、`charts.yaml`、`tools/validate_config.py`、`tests/`、`Makefile`、`requirements-dev.txt`、`.github/workflows/ci.yml`、`CONTRIBUTING.md`、`README.md`。
+- 实现内容：增加安全忽略规则；限制环境配置字符集且不执行配置；校验缺项、未知项、枚举、节点/IP 唯一性、CIDR 语法及重叠、DNS、路径、运行时/离线模式组合；严格检查版本 SemVer、HTTPS 来源、YAML 重复键和 Chart 锁定状态。
+- 验证命令：`make validate`、`make test`、`bash -n tests/test-config-cli.sh`、`PYTHON=python3 bash tests/test-config-cli.sh`、`git diff --cached --check`。
+- 验证结果：配置校验通过；15 项单元测试通过；CLI 正向与空版本负向 smoke test 通过；Bash 语法检查通过；忽略规则示例检查通过。
+- 未执行/未验证：本地环境缺少 ShellCheck 与 shfmt，无法本地执行这两项；CI 已配置安装并运行，等待 GitHub Actions 实际结果。尚未在 Rocky Linux 9 目标主机做部署测试。
+- 遗留风险：etcd/运行时/CFSSL/Helm/Chart 等版本须在相应里程碑做官方来源与兼容性矩阵审查后再锁定；M0 不把未经验证的组件版本伪装为生产锁定值。
+- Commit：本轮提交后补录。
+
 ### 需求与架构归档 - 2026-11-12
-- 状态：文档已提交；部署代码尚未开始。
+- 状态：初始设计文档已提交；部署代码当时尚未开始。
 - 文件：README.md、docs/ARCHITECTURE.md、docs/IMPLEMENTATION-PROMPT.md、docs/IMPLEMENTATION-PLAN.md。
-- 验证：通过 GitHub 仓库文件/提交结果确认文档提交；尚无脚本可执行测试。
-- 下一步：M0，建立配置模板、.gitignore、配置校验和 Shell CI。
+- 验证：通过 GitHub 仓库文件/提交结果确认文档提交；当时尚无脚本可执行测试。
+- 下一步：M0，建立配置模板、.gitignore、配置校验和 Shell CI（已由上述 M0 记录推进）。
 - 遗留风险：目标 Kubernetes/etcd/Calico/Helm Chart 版本兼容性需按官方发布信息确认；Rocky Linux 9 目标环境尚未进行安装测试。

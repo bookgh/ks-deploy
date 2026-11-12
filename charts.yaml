@@ -1,0 +1,15 @@
+# Chart 锁定策略：先确定来源和名称；完成 K8s 版本兼容性审查后再锁定精确版本。
+schema_version: 1
+charts:
+  calico:
+    repository: oci://quay.io/calico/charts
+    chart: tigera-operator
+    version_lock_status: pending
+  coredns:
+    repository: oci://ghcr.io/coredns/charts
+    chart: coredns
+    version_lock_status: pending
+  nodelocaldns:
+    repository: local://charts/nodelocaldns
+    chart: nodelocaldns
+    version_lock_status: pending

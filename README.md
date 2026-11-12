@@ -2,13 +2,14 @@
 
 > Rocky Linux 9 / amd64 的 Kubernetes 原生二进制部署框架。目标 Kubernetes 版本：`v1.37.2`。禁止使用 kubeadm、k3s、RKE 等集群封装工具。
 
-**当前阶段：需求与架构规格归档。** 本仓库当前提交的是设计基线和后续 AI 协作提示词，不代表部署脚本、离线制品或生产验证已经完成。实施时必须逐项实现、测试和更新状态，不能把文档当作已交付代码。
+**当前阶段：M0 工程基础已建立，部署功能尚未实现。** 仓库包括配置模板、配置校验器、基础单元测试和 CI 静态检查；这不代表 Kubernetes 部署脚本、离线制品或 Rocky Linux 9 生产环境验证已经完成。
 
 ## 文档导航
 
 - [总体架构与完整需求规格](docs/ARCHITECTURE.md)
 - [后续会话使用的实施提示词](docs/IMPLEMENTATION-PROMPT.md)
 - [里程碑、验收与实施顺序](docs/IMPLEMENTATION-PLAN.md)
+- [开发与贡献说明](CONTRIBUTING.md)
 
 ## 核心设计
 
@@ -21,20 +22,34 @@
 - 在线/离线制品分离；GitHub Actions 只负责获取官方制品、校验、解析镜像、打包并发布 Release，不部署集群。
 - 幂等、SHA256 校验、Dry-run、分步执行、状态检查、版本隔离和滚动升级是强制要求。
 
+## 配置与本地校验
+
+```bash
+cp cluster.env.example cluster.env
+python3 -m venv .venv
+source .venv/bin/activate
+make install-dev
+make check
+```
+
+`cluster.env` 使用严格的 `KEY=value` 格式，配置校验器不会执行其中的内容。`versions.yaml` 是组件版本的唯一事实源；Chart 只有在完成兼容性审查后才能设置精确版本并标记为 `locked`。详细说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+CI 在 push 到 `main`、Pull Request 和手动触发时执行配置校验、Python 单元测试、`bash -n`、ShellCheck 与 shfmt。CI 不会构建或发布 Release。
+
 ## 从新会话继续
 
 关闭 ChatGPT 窗口后重新开始时：
 
 1. 打开本仓库，先阅读 [ARCHITECTURE.md](docs/ARCHITECTURE.md)、[IMPLEMENTATION-PROMPT.md](docs/IMPLEMENTATION-PROMPT.md)、[IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md)。
-2. 把下面的提示词发给 ChatGPT，并要求它先检查仓库现状，再继续实现。不要让模型凭空假设脚本已经存在。
+2. 要求先检查仓库现状，再继续实施。不要让模型凭空假设脚本已经存在。
 3. 每次只推进一个可验证里程碑；完成后更新文档、执行测试，再按中文提交说明直接提交 `main`。
 
 建议新会话提示词：
 
 ```text
 请继续开发 https://github.com/bookgh/ks-deploy.git。
-先读取 main 分支 README.md、docs/ARCHITECTURE.md、docs/IMPLEMENTATION-PROMPT.md、
-docs/IMPLEMENTATION-PLAN.md，以及仓库中已经存在的代码和最近提交。
+先读取 main 分支 README.md、CONTRIBUTING.md、docs/ARCHITECTURE.md、
+docs/IMPLEMENTATION-PROMPT.md、docs/IMPLEMENTATION-PLAN.md，以及仓库中已经存在的代码和最近提交。
 以仓库内容为唯一项目事实来源，不要假设未实现的脚本或功能已经存在。
 先汇报当前已实现、未实现、存在风险和下一步最小可交付任务；
 然后按 IMPLEMENTATION-PROMPT.md 的约束继续开发。

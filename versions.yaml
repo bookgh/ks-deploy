@@ -1,0 +1,18 @@
+# 版本单一事实源。只有经过官方来源与兼容性审查的版本才能写入此文件。
+schema_version: 1
+platform:
+  os_family: rocky
+  os_major: 9
+  architecture: amd64
+kubernetes:
+  version: v1.37.2
+  download_base_url: https://dl.k8s.io
+  binaries:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+    - kubelet
+    - kube-proxy
+    - kubectl
+# 其他组件版本在对应里程碑完成上游来源及兼容性审查后再加入。
+components: {}

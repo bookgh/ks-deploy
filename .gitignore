@@ -1,0 +1,39 @@
+# 运行时配置和敏感数据
+/cluster.env
+/.env
+/.env.*
+!/.env.example
+!/cluster.env.example
+/pki/
+/artifacts/
+/output/
+/state/
+/secrets/
+/credentials/
+
+# 凭据、密钥及集群访问配置
+*.kubeconfig
+kubeconfig
+id_rsa
+id_ed25519
+*.key
+*.key.pem
+*.token
+*.log
+*.pid
+*.sock
+
+# Python 开发产物
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# 编辑器及操作系统文件
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
