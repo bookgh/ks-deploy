@@ -11,7 +11,7 @@ if bash "$ROOT/bin/deploy-step.sh" unknown >/dev/null 2>&1; then
     fail '未知阶段必须返回非零状态'
 fi
 if bash "$ROOT/bin/deploy-step.sh" --dry-run prepare >/dev/null 2>&1; then
-    fail '未实现的阶段必须明确失败'
+    fail '非 Rocky 9 环境或缺少 cosign 时必须明确失败'
 fi
 if bash "$ROOT/bin/install.sh" --dry-run >/dev/null 2>&1; then
     fail '缺失运行配置必须明确失败'

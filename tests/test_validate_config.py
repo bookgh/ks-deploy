@@ -64,6 +64,14 @@ class ConfigValidatorTests(unittest.TestCase):
         errors = self.validate(versions=bad_versions)
         self.assertTrue(any("components.caddy.sha256" in error for error in errors), errors)
 
+    def test_component_signature_digest_must_be_valid(self) -> None:
+        bad_versions = self.versions.replace(
+            "certificate_sha256: 4b033b8ad641d15b59eb95c2a7d1c3f886874335bef32c4876ab6e2011ce2c77",
+            "certificate_sha256: invalid",
+        )
+        errors = self.validate(versions=bad_versions)
+        self.assertTrue(any("components.caddy.certificate_sha256" in error for error in errors), errors)
+
     def test_invalid_semver_identifiers_are_rejected(self) -> None:
         invalid_versions = ("v1.37.2-", "v1.37.2-01", "v01.37.2", "v1.37.2+build.")
         for invalid_version in invalid_versions:
@@ -79,6 +87,11 @@ class ConfigValidatorTests(unittest.TestCase):
     def test_unknown_environment_key_is_rejected(self) -> None:
         errors = self.validate(env=self.env + "UNRECOGNIZED_OPTION=true\n")
         self.assertTrue(any("未知配置项" in error for error in errors), errors)
+
+    def test_caddy_root_cannot_expose_system_root(self) -> None:
+        bad_env = self.env.replace("CADDY_ROOT=/srv/ks-deploy", "CADDY_ROOT=/")
+        errors = self.validate(env=bad_env)
+        self.assertTrue(any("CADDY_ROOT" in error for error in errors), errors)
 
     def test_missing_environment_key_is_rejected(self) -> None:
         bad_env = "\n".join(line for line in self.env.splitlines() if not line.startswith("SSH_PORT=")) + "\n"

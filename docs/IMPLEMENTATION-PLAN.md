@@ -31,8 +31,8 @@
 - [~] bin/common.sh：日志、颜色、进度、错误 trap、Dry-run、备份、SHA256；锁尚未实现
 - [~] bin/install.sh 与 bin/deploy-step.sh 依赖顺序编排骨架
 - [ ] SSH executor：超时、有限重试、HostKey 校验、远端安全命令执行
-- [ ] 00-prepare-install-node.sh
-- [ ] Caddyfile、Systemd unit
+- [~] 00-prepare-install-node.sh：校验并部署锁定 Caddy 制品；SSH key 管理与实机验收未完成
+- [~] Caddyfile、Systemd unit（由安装脚本生成；需 Rocky 9 实机验证）
 - [ ] RPM repo 配置模板
 - [ ] 远端 HTTP 下载与校验函数
 
@@ -43,9 +43,9 @@
 - 文件只通过 HTTP 分发，不使用 SCP/rsync。
 - Caddy 由 Systemd 托管，安装节点端口可达性检查通过。
 
-当前 M1 尚未达到验收完成：公共函数库和依赖顺序调度骨架已实现，但阶段脚本本身尚未实现。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy 单元尚无集成验证；不得把 M1 标为完成。
+当前 M1 尚未达到验收完成：公共函数库、依赖顺序调度骨架和安装节点准备脚本已实现；其余阶段脚本尚未实现。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy systemd 行为尚无 Rocky 9 集成验证；不得把 M1 标为完成。
 
-版本解析准备：已从 Caddy 官方 Release `v2.11.9` 固定 amd64 tarball URL 与 SHA256，组件 source URL 缺少 SHA256 时配置校验失败。哈希来自 GitHub 官方 Release API 资产 digest；签名验证和安装节点服务尚未实现。
+版本解析准备：已从 Caddy 官方 Release `v2.11.9` 固定 amd64 tarball、checksum 清单、Sigstore 签名和证书的 URL 与 SHA256。准备脚本要求 cosign 验证两个签名的证书身份/发行者，再以已签名的 checksum 清单比对 tarball 哈希；组件 source URL 缺少 SHA256 时配置校验失败。哈希来自 GitHub 官方 Release API 资产 digest。
 
 ## M2：系统初始化与 PKI
 
@@ -198,5 +198,5 @@
 - 验证命令：`make check`（新增 Bash 自动化测试已接入 `make test`，并由 GitHub Actions 运行）。
 - 验证结果：本地 Windows 环境未提供 Bash、ShellCheck、shfmt 或 GNU Make；GitHub Actions run [#43218399581](https://github.com/bookgh/ks-deploy/actions/runs/43218399581) 通过配置校验、16 项 Python 测试、CLI smoke test、Bash 自动化测试、`bash -n`、ShellCheck 和 shfmt。
 - 未执行/未验证：未验证 Rocky Linux 9；未实测 SSH HostKey、超时、远端退出或 HTTP 下载；未启动 Caddy。
-- 遗留风险：尚未实现文件锁、节点编排器、Caddy Systemd、RPM repo、远端 HTTP 测试、安装节点预检和部署脚本；不满足完整 M1 验收，更不代表集群部署完成。
+- 遗留风险：尚未实现文件锁、SSH key 配置、RPM repo、远端 HTTP 测试；安装脚本依赖 Rocky 9 上预装的 cosign、PyYAML、curl 等工具，需补离线依赖闭包和主机实测；不满足完整 M1 验收，更不代表集群部署完成。
 - Commit：本轮主提交 `e493360`；换行修复 `6418ec6`；错误处理及静态检查收尾 `9d8560e`、`3540965`、`b1c1829`、`cf57510`、`121ebdc`。

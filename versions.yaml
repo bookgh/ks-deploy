@@ -19,3 +19,13 @@ components:
     version: v2.11.9
     source_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_linux_amd64.tar.gz
     sha256: 5b8cb7faf8726a2028ad96a66e54e6e81e8f361bc6175e5d22bbd997cc5177fb
+    signature_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_linux_amd64.tar.gz.sig
+    signature_sha256: c0e399689759fb9ea608fcc7bd88bc6f28a29bb92a4927ebaa348e94fc826e28
+    certificate_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_linux_amd64.pem
+    certificate_sha256: 4b033b8ad641d15b59eb95c2a7d1c3f886874335bef32c4876ab6e2011ce2c77
+    checksums_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_checksums.txt
+    checksums_sha256: e4e1e43b78299733b19b8aeab8abebcf57aef4f5dae617be125016f9e4e0299f
+    checksums_signature_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_checksums.txt.sig
+    checksums_signature_sha256: 59bbd12986f37c27ce528a934a484ff5b33a23557dae207e674eb904d49bd8b8
+    checksums_certificate_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_checksums.txt.pem
+    checksums_certificate_sha256: 146eaaf82a9b4b0b14e790c7cd3148c04f56aec4e5a94f99eecdd1d88e191746

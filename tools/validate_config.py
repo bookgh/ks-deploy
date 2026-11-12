@@ -15,7 +15,7 @@ from yaml.constructor import ConstructorError
 
 ENV_KEYS = {
     "CLUSTER_NAME", "INSTALL_NODE_IP", "MASTER_NODES", "WORKER_NODES",
-    "SSH_USER", "SSH_PORT", "CADDY_BIND", "CADDY_PORT", "CADDY_ROOT",
+    "SSH_USER", "SSH_PORT", "CADDY_BIND", "CADDY_PORT", "CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT",
     "POD_CIDR", "SERVICE_CIDR", "CLUSTER_DNS", "CLUSTER_DOMAIN",
     "NODELOCAL_DNS_IP", "CONTAINER_RUNTIME", "PROXY_MODE", "IMAGE_MODE",
     "OFFLINE_MODE", "HARBOR_ENABLED", "HARBOR_NODE_IP", "HARBOR_DOMAIN",
@@ -24,7 +24,7 @@ ENV_KEYS = {
     "DOCKER_ROOT", "ETCD_DATA_DIR",
 }
 BOOLEAN_KEYS = {"OFFLINE_MODE", "HARBOR_ENABLED", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL"}
-PATH_KEYS = {"CADDY_ROOT", "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"}
+PATH_KEYS = {"CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"}
 NUMERIC_IDENTIFIER = r"(?:0|[1-9][0-9]*)"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 BUILD_IDENTIFIER = r"[0-9A-Za-z-]+"
@@ -241,6 +241,13 @@ def validate_env(values: dict[str, str]) -> list[str]:
         path = Path(path_value)
         if not path.is_absolute() or ".." in path.parts or any(char.isspace() for char in path_value):
             errors.append(f"{key}: 必须是无空格、无 .. 路径段的绝对路径")
+    caddy_root = Path(values.get("CADDY_ROOT", "/"))
+    if caddy_root == Path("/"):
+        errors.append("CADDY_ROOT: 不得指向文件系统根目录")
+    for key in ("CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"):
+        protected = Path(values.get(key, "/"))
+        if protected == caddy_root or caddy_root in protected.parents:
+            errors.append(f"CADDY_ROOT: 不得包含敏感或运行时数据路径 {key}")
 
     return errors
 
@@ -306,7 +313,8 @@ def validate_versions(data: Any, source: str) -> list[str]:
             if not isinstance(name, str) or not isinstance(config, dict):
                 errors.append(f"{source}: components 下的每个组件必须是 mapping")
                 continue
-            unknown_component = set(config) - {"version", "source_url", "sha256"}
+            checksum_fields = {"checksums_url", "checksums_sha256", "checksums_signature_url", "checksums_signature_sha256", "checksums_certificate_url", "checksums_certificate_sha256", "signature_url", "signature_sha256", "certificate_url", "certificate_sha256"}
+            unknown_component = set(config) - {"version", "source_url", "sha256"} - checksum_fields
             if unknown_component:
                 errors.append(f"{source}: components.{name} 存在未知字段：{', '.join(sorted(map(str, unknown_component)))}")
             if "version" not in config or not _is_version(config.get("version")):
@@ -319,6 +327,16 @@ def validate_versions(data: Any, source: str) -> list[str]:
                     errors.append(f"{source}: components.{name}.sha256 必须是 64 位小写 SHA256")
             elif "sha256" in config:
                 errors.append(f"{source}: components.{name}.sha256 需要同时配置 source_url")
+            for field in checksum_fields & set(config):
+                if field.endswith("_url") and not str(config[field]).startswith("https://"):
+                    errors.append(f"{source}: components.{name}.{field} 必须使用 HTTPS")
+                if field.endswith("_sha256") and (not isinstance(config[field], str) or not re.fullmatch(r"[0-9a-f]{64}", config[field])):
+                    errors.append(f"{source}: components.{name}.{field} 必须是 64 位小写 SHA256")
+            for artifact in ("signature", "certificate", "checksums", "checksums_signature", "checksums_certificate"):
+                url_key = f"{artifact}_url"
+                digest_key = f"{artifact}_sha256"
+                if (url_key in config) != (digest_key in config):
+                    errors.append(f"{source}: components.{name}.{artifact} URL 与 SHA256 必须同时配置")
     return errors
 
 
