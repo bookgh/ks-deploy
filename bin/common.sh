@@ -123,24 +123,46 @@ ks_run() {
 
 ks_sha256_file() {
     local file="$1" expected="$2" actual
-    [[ -f "$file" ]] || ks_die "文件不存在：$file"
-    [[ "$expected" =~ ^[[:xdigit:]]{64}$ ]] || ks_die "SHA256 格式错误：$expected"
+    if [[ ! -f "$file" ]]; then
+        ks_die "文件不存在：$file"
+        return 1
+    fi
+    if [[ ! "$expected" =~ ^[[:xdigit:]]{64}$ ]]; then
+        ks_die "SHA256 格式错误：$expected"
+        return 1
+    fi
     if command -v sha256sum >/dev/null 2>&1; then
         actual="$(sha256sum -- "$file" | awk '{print $1}')"
     elif command -v shasum >/dev/null 2>&1; then
         actual="$(shasum -a 256 -- "$file" | awk '{print $1}')"
     else
         ks_die "缺少 sha256sum 或 shasum"
+        return 1
     fi
-    [[ "${actual,,}" == "${expected,,}" ]] || ks_die "SHA256 不匹配：$file"
+    if [[ "${actual,,}" != "${expected,,}" ]]; then
+        ks_die "SHA256 不匹配：$file"
+        return 1
+    fi
 }
 
 ks_http_download() {
     local url="$1" destination="$2" expected="$3" timeout="${4:-120}" attempts="${5:-3}"
-    [[ "$timeout" =~ ^[1-9][0-9]*$ && "$timeout" -le 3600 ]] || ks_die "下载超时必须在 1 到 3600 秒之间"
-    [[ "$attempts" =~ ^[1-5]$ ]] || ks_die "下载重试次数必须在 1 到 5 次之间"
-    [[ "$url" =~ ^https?://[^[:space:]]+$ ]] || ks_die "下载 URL 仅允许 HTTP(S)：$url"
-    [[ "$expected" =~ ^[[:xdigit:]]{64}$ ]] || ks_die "下载必须提供 SHA256"
+    if [[ ! "$timeout" =~ ^[1-9][0-9]*$ || "$timeout" -gt 3600 ]]; then
+        ks_die "下载超时必须在 1 到 3600 秒之间"
+        return 1
+    fi
+    if [[ ! "$attempts" =~ ^[1-5]$ ]]; then
+        ks_die "下载重试次数必须在 1 到 5 次之间"
+        return 1
+    fi
+    if [[ ! "$url" =~ ^https?://[^[:space:]]+$ ]]; then
+        ks_die "下载 URL 仅允许 HTTP(S)：$url"
+        return 1
+    fi
+    if [[ ! "$expected" =~ ^[[:xdigit:]]{64}$ ]]; then
+        ks_die "下载必须提供 SHA256"
+        return 1
+    fi
     if [[ "$KS_DRY_RUN" == true ]]; then
         ks_info "Dry-run：下载 $url -> $destination 并验证 SHA256"
         return 0
@@ -167,11 +189,26 @@ ks_http_download() {
 ks_ssh_exec() {
     local host="$1" retries="$2" connect_timeout="$3" command="" arg attempt
     shift 3
-    [[ "$host" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || ks_die "SSH 主机名/IP 非法：$host"
-    [[ "$retries" =~ ^[1-5]$ && "$connect_timeout" =~ ^[1-9][0-9]*$ && "$connect_timeout" -le 300 ]] || ks_die "SSH 重试次数必须为 1 到 5 次，连接超时须为 1 到 300 秒"
-    [[ "${SSH_PORT:-22}" =~ ^[1-9][0-9]{0,4}$ && "${SSH_PORT:-22}" -le 65535 ]] || ks_die "SSH 端口非法"
-    [[ "${SSH_USER:-root}" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]] || ks_die "SSH 用户名非法"
-    (($# > 0)) || ks_die "SSH 命令不能为空"
+    if [[ ! "$host" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]]; then
+        ks_die "SSH 主机名/IP 非法：$host"
+        return 1
+    fi
+    if [[ ! "$retries" =~ ^[1-5]$ || ! "$connect_timeout" =~ ^[1-9][0-9]*$ || "$connect_timeout" -gt 300 ]]; then
+        ks_die "SSH 重试次数必须为 1 到 5 次，连接超时须为 1 到 300 秒"
+        return 1
+    fi
+    if [[ ! "${SSH_PORT:-22}" =~ ^[1-9][0-9]{0,4}$ || "${SSH_PORT:-22}" -gt 65535 ]]; then
+        ks_die "SSH 端口非法"
+        return 1
+    fi
+    if [[ ! "${SSH_USER:-root}" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]]; then
+        ks_die "SSH 用户名非法"
+        return 1
+    fi
+    if (($# == 0)); then
+        ks_die "SSH 命令不能为空"
+        return 1
+    fi
     for arg in "$@"; do
         printf -v arg '%q' "$arg"
         command+="${command:+ }$arg"

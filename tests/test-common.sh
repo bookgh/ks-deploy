@@ -35,6 +35,12 @@ ks_sha256_file "$work/payload" ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb
 if ks_sha256_file "$work/payload" 0000000000000000000000000000000000000000000000000000000000000000 2>/dev/null; then
     fail '错误 SHA256 应失败'
 fi
+if ks_ssh_exec 'invalid host' 1 5 /bin/true 2>/dev/null; then
+    fail '非法 SSH 主机应失败'
+fi
+if ks_http_download file:///etc/passwd "$work/download" ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad 2>/dev/null; then
+    fail '非 HTTP(S) URL 应失败'
+fi
 pass 'SHA256 正确匹配且拒绝不匹配'
 
 KS_DRY_RUN=true
