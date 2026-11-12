@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-# shellcheck source=../bin/common.sh
+# shellcheck source=bin/common.sh
 source "$ROOT/bin/common.sh"
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
@@ -17,7 +17,7 @@ ks_config_load "$work/config"
 [[ "$(ks_config_get CLUSTER_NAME)" == ks-test ]] || fail '安全读取配置值'
 pass '安全读取配置值'
 
-printf 'CLUSTER_NAME=$(touch %s/pwned)\n' "$work" >"$work/config"
+printf "CLUSTER_NAME=\$(touch %s/pwned)\n" "$work" >"$work/config"
 if ks_config_load "$work/config"; then fail '配置命令替换应失败'; fi
 [[ ! -e "$work/pwned" ]] || fail '配置解析执行了命令'
 pass '配置内容不执行 Shell 命令'

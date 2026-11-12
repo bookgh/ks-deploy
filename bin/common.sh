@@ -27,7 +27,8 @@ ks_color() {
 
 ks_log() {
     local level="$1"; shift
-    local line="[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] [$level] $*"
+    local line
+    line="[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] [$level] $*"
     if ks_color; then
         case "$level" in
             ERROR) printf '\033[31m%s\033[0m\n' "$line" >&2 ;;
@@ -90,6 +91,7 @@ ks_config_load() {
                 return 1
                 ;;
         esac
+        # shellcheck disable=SC2016
         if [[ "$value" == *'$('* || "$value" == *'`'* || "$value" == *';'* ]]; then
             ks_die "$file:$line_no：配置值包含不允许的 Shell 语法"
             return 1
