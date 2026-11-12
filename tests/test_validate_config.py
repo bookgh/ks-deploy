@@ -58,7 +58,8 @@ class ConfigValidatorTests(unittest.TestCase):
 
     def test_component_source_requires_sha256(self) -> None:
         bad_versions = self.versions.replace(
-            "    sha256: 5b8cb7faf8726a2028ad96a66e54e6e81e8f361bc6175e5d22bbd997cc5177fb\\n", ""
+            "sha256: 5b8cb7faf8726a2028ad96a66e54e6e81e8f361bc6175e5d22bbd997cc5177fb",
+            "sha256: invalid",
         )
         errors = self.validate(versions=bad_versions)
         self.assertTrue(any("components.caddy.sha256" in error for error in errors), errors)
