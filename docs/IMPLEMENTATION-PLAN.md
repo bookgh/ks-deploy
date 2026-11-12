@@ -194,7 +194,7 @@
 - 变更文件：`bin/common.sh`、`tests/test-common.sh`、`Makefile`、`README.md`、`CONTRIBUTING.md`、`docs/IMPLEMENTATION-PLAN.md`。
 - 实现内容：加入严格配置键允许列表与字面值解析、非 TTY 颜色日志、步骤进度、统一错误 trap、Dry-run 命令包装、备份、HTTP(S) 下载及 SHA256 验证、启用 HostKey 严格检查的 SSH 执行基础。下载失败采用有限重试；SSH 重试次数由调用方明确提供。
 - 验证命令：`make check`（新增 Bash 自动化测试已接入 `make test`，并由 GitHub Actions 运行）。
-- 验证结果：本地 Windows 环境未提供 Bash、ShellCheck、shfmt 或 GNU Make，未能本地运行 Shell 测试及静态检查；提交后的 GitHub Actions 状态待核对。
+- 验证结果：本地 Windows 环境未提供 Bash、ShellCheck、shfmt 或 GNU Make；GitHub Actions run [#43218399581](https://github.com/bookgh/ks-deploy/actions/runs/43218399581) 通过配置校验、16 项 Python 测试、CLI smoke test、Bash 自动化测试、`bash -n`、ShellCheck 和 shfmt。
 - 未执行/未验证：未验证 Rocky Linux 9；未实测 SSH HostKey、超时、远端退出或 HTTP 下载；未启动 Caddy。
 - 遗留风险：尚未实现文件锁、节点编排器、Caddy Systemd、RPM repo、远端 HTTP 测试、安装节点预检和部署脚本；不满足完整 M1 验收，更不代表集群部署完成。
-- Commit：待提交。
+- Commit：本轮主提交 `e493360`；换行修复 `6418ec6`；错误处理及静态检查收尾 `9d8560e`、`3540965`、`b1c1829`、`cf57510`、`121ebdc`。
