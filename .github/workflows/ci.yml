@@ -26,6 +26,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements-dev.txt
 
       - name: 安装 Python 开发依赖
         run: python -m pip install -r requirements-dev.txt
