@@ -56,5 +56,6 @@ make validate CONFIG_ENV=cluster.env CONFIG_VERSIONS=versions.yaml CONFIG_CHARTS
 - Bash 脚本使用 `set -euo pipefail`，4 空格缩进，必须通过 `bash -n`、ShellCheck 和 shfmt。
 - 不允许通过 SCP/rsync 分发文件；远端文件通过安装节点 HTTP 服务获取并校验 SHA256。
 - Dry-run 不得产生本地或远端副作用；幂等判断必须核验真实状态。
+- 公共 Bash 函数位于 `bin/common.sh`；配置必须通过允许列表解析，不得 `source`/`eval`。HTTP 下载调用必须提供 SHA256；SSH 默认启用 `StrictHostKeyChecking`，且只有明确幂等的命令允许设置多次重试。
 - 完成功能、测试、文档和里程碑记录后再集中提交；commit message 使用中文并直接提交 main。
 - 不因普通 CI 或代码变更触发 Release 制品构建。

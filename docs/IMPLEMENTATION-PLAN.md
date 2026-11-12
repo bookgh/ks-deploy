@@ -28,7 +28,7 @@
 ## M1：公共执行框架、安装节点和 Caddy
 
 **范围**
-- [ ] bin/common.sh：日志、颜色、进度、错误 trap、Dry-run、锁、备份、SHA256
+- [~] bin/common.sh：日志、颜色、进度、错误 trap、Dry-run、备份、SHA256；锁尚未实现
 - [ ] bin/install.sh 与 bin/deploy-step.sh 基础编排
 - [ ] SSH executor：超时、有限重试、HostKey 校验、远端安全命令执行
 - [ ] 00-prepare-install-node.sh
@@ -42,6 +42,8 @@
 - SSH 不可达、HostKey 不匹配、超时均有明确错误。
 - 文件只通过 HTTP 分发，不使用 SCP/rsync。
 - Caddy 由 Systemd 托管，安装节点端口可达性检查通过。
+
+当前 M1 尚未达到验收完成：本轮只实现公共函数库中的配置解析、日志、进度、错误 trap、Dry-run、备份、HTTP 下载校验和 SSH 命令执行基础。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy 单元尚无集成验证；不得把 M1 标为完成。
 
 ## M2：系统初始化与 PKI
 
@@ -186,3 +188,13 @@
 - 验证：通过 GitHub 仓库文件/提交结果确认文档提交；当时尚无脚本可执行测试。
 - 下一步：M1，实施公共执行框架、安装节点预检、SSH 执行器及 Caddy HTTP 制品分发。
 - 遗留风险：目标 Kubernetes/etcd/Calico/Helm Chart 版本兼容性需按官方发布信息确认；Rocky Linux 9 目标环境尚未进行安装测试。
+
+### M1 基础库 - 2026-11-12
+- 状态：部分实现；M1 验收未完成。
+- 变更文件：`bin/common.sh`、`tests/test-common.sh`、`Makefile`、`README.md`、`CONTRIBUTING.md`、`docs/IMPLEMENTATION-PLAN.md`。
+- 实现内容：加入严格配置键允许列表与字面值解析、非 TTY 颜色日志、步骤进度、统一错误 trap、Dry-run 命令包装、备份、HTTP(S) 下载及 SHA256 验证、启用 HostKey 严格检查的 SSH 执行基础。下载失败采用有限重试；SSH 重试次数由调用方明确提供。
+- 验证命令：`make check`（新增 Bash 自动化测试已接入 `make test`，并由 GitHub Actions 运行）。
+- 验证结果：本地 Windows 环境未提供 Bash、ShellCheck、shfmt 或 GNU Make，未能本地运行 Shell 测试及静态检查；提交后的 GitHub Actions 状态待核对。
+- 未执行/未验证：未验证 Rocky Linux 9；未实测 SSH HostKey、超时、远端退出或 HTTP 下载；未启动 Caddy。
+- 遗留风险：尚未实现文件锁、节点编排器、Caddy Systemd、RPM repo、远端 HTTP 测试、安装节点预检和部署脚本；不满足完整 M1 验收，更不代表集群部署完成。
+- Commit：待提交。

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../bin/common.sh
+source "$ROOT/bin/common.sh"
+work="$(mktemp -d)"
+trap 'rm -rf -- "$work"' EXIT
+fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+pass() { printf 'PASS: %s\n' "$*"; }
+
+cat >"$work/config" <<'EOF'
+CLUSTER_NAME=ks-test
+INSTALL_NODE_IP=192.0.2.2
+EOF
+ks_config_load "$work/config"
+[[ "$(ks_config_get CLUSTER_NAME)" == ks-test ]] || fail '安全读取配置值'
+pass '安全读取配置值'
+
+printf 'CLUSTER_NAME=$(touch %s/pwned)\n' "$work" >"$work/config"
+if ks_config_load "$work/config"; then fail '配置命令替换应失败'; fi
+[[ ! -e "$work/pwned" ]] || fail '配置解析执行了命令'
+pass '配置内容不执行 Shell 命令'
+
+printf 'CLUSTER_NAME=first\nCLUSTER_NAME=second\n' >"$work/config"
+if ks_config_load "$work/config"; then fail '重复键应失败'; fi
+pass '重复配置键拒绝'
+
+printf 'unknown\n' >"$work/config"
+if ks_config_load "$work/config"; then fail '无等号配置应失败'; fi
+pass '非法配置行拒绝'
+
+printf abc >"$work/payload"
+ks_sha256_file "$work/payload" ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+if ks_sha256_file "$work/payload" 0000000000000000000000000000000000000000000000000000000000000000 2>/dev/null; then
+    fail '错误 SHA256 应失败'
+fi
+pass 'SHA256 正确匹配且拒绝不匹配'
+
+KS_DRY_RUN=true
+ks_run touch "$work/dry-run-marker" >/dev/null
+ks_http_download https://example.invalid/payload "$work/download" ba7816bf8f01cfea414140de5dae2223b00361a9cb410ff61f20015ad >/dev/null 2>&1
+ks_ssh_exec 192.0.2.10 1 5 /bin/true >/dev/null 2>&1
+[[ ! -e "$work/dry-run-marker" && ! -e "$work/download" ]] || fail 'Dry-run 产生文件副作用'
+pass 'Dry-run 不写文件，且不调用 SSH/HTTP'
