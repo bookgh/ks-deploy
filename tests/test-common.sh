@@ -44,8 +44,8 @@ fi
 pass 'SHA256 正确匹配且拒绝不匹配'
 
 KS_DRY_RUN=true
-ks_run touch "$work/dry-run-marker" >/dev/null
-ks_http_download https://example.invalid/payload "$work/download" ba7816bf8f01cfea414140de5dae2223b00361a9cb410ff61f20015ad >/dev/null 2>&1
-ks_ssh_exec 192.0.2.10 1 5 /bin/true >/dev/null 2>&1
+ks_run touch "$work/dry-run-marker" >/dev/null || fail 'Dry-run command wrapper failed'
+ks_http_download https://example.invalid/payload "$work/download" ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad >/dev/null 2>&1 || fail 'Dry-run HTTP wrapper failed'
+ks_ssh_exec 192.0.2.10 1 5 /bin/true >/dev/null 2>&1 || fail 'Dry-run SSH wrapper failed'
 [[ ! -e "$work/dry-run-marker" && ! -e "$work/download" ]] || fail 'Dry-run 产生文件副作用'
 pass 'Dry-run 不写文件，且不调用 SSH/HTTP'
