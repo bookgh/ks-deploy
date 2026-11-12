@@ -18,7 +18,14 @@ id_rsa
 id_ed25519
 *.key
 *.key.pem
+*-key.pem
+*_key.pem
+*.pem
+*.p12
+*.pfx
 *.token
+*.secret
+*.credentials
 *.log
 *.pid
 *.sock

@@ -56,6 +56,14 @@ class ConfigValidatorTests(unittest.TestCase):
         errors = self.validate(versions=bad_versions)
         self.assertTrue(any("kubernetes.version" in error for error in errors), errors)
 
+    def test_invalid_semver_identifiers_are_rejected(self) -> None:
+        invalid_versions = ("v1.37.2-", "v1.37.2-01", "v01.37.2", "v1.37.2+build.")
+        for invalid_version in invalid_versions:
+            with self.subTest(version=invalid_version):
+                bad_versions = self.versions.replace("v1.37.2", invalid_version)
+                errors = self.validate(versions=bad_versions)
+                self.assertTrue(any("kubernetes.version" in error for error in errors), errors)
+
     def test_empty_yaml_document_is_rejected(self) -> None:
         errors = self.validate(versions="\n")
         self.assertTrue(any("根节点必须是 YAML mapping" in error for error in errors), errors)
@@ -100,7 +108,7 @@ class ConfigValidatorTests(unittest.TestCase):
 
     def test_gitignore_excludes_runtime_secrets(self) -> None:
         ignore_content = (ROOT / ".gitignore").read_text(encoding="utf-8")
-        for pattern in ("/cluster.env", "/pki/", "/artifacts/", "/output/", "/state/", "*.kubeconfig", "*.key", "*.token"):
+        for pattern in ("/cluster.env", "/pki/", "/artifacts/", "/output/", "/state/", "*.kubeconfig", "*.key", "*-key.pem", "*.pem", "*.p12", "*.pfx", "*.token"):
             with self.subTest(pattern=pattern):
                 self.assertIn(pattern, ignore_content)
 

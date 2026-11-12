@@ -1,12 +1,13 @@
-# Chart 锁定策略：先确定来源和名称；完成 K8s 版本兼容性审查后再锁定精确版本。
+# Chart 版本锁定策略：完成目标 Kubernetes 版本兼容性审查后再锁定精确版本。
+# Calico 和 CoreDNS 使用各自官方文档公布的 Helm 仓库；NodeLocal DNSCache 由本项目提供本地 Chart。
 schema_version: 1
 charts:
   calico:
-    repository: oci://quay.io/calico/charts
+    repository: https://docs.tigera.io/calico/charts
     chart: tigera-operator
     version_lock_status: pending
   coredns:
-    repository: oci://ghcr.io/coredns/charts
+    repository: https://coredns.github.io/helm
     chart: coredns
     version_lock_status: pending
   nodelocaldns:

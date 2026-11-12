@@ -25,7 +25,14 @@ ENV_KEYS = {
 }
 BOOLEAN_KEYS = {"OFFLINE_MODE", "HARBOR_ENABLED", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL"}
 PATH_KEYS = {"CADDY_ROOT", "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"}
-VERSION_RE = re.compile(r"^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
+NUMERIC_IDENTIFIER = r"(?:0|[1-9][0-9]*)"
+PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+BUILD_IDENTIFIER = r"[0-9A-Za-z-]+"
+VERSION_RE = re.compile(
+    rf"^v?{NUMERIC_IDENTIFIER}\.{NUMERIC_IDENTIFIER}\.{NUMERIC_IDENTIFIER}"
+    rf"(?:-{PRERELEASE_IDENTIFIER}(?:\.{PRERELEASE_IDENTIFIER})*)?"
+    rf"(?:\+{BUILD_IDENTIFIER}(?:\.{BUILD_IDENTIFIER})*)?$"
+)
 NODE_NAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 DNS_LABEL_RE = re.compile(r"^[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?$")
 

@@ -43,6 +43,13 @@ make validate CONFIG_ENV=cluster.env CONFIG_VERSIONS=versions.yaml CONFIG_CHARTS
 
 配置校验器仅解析受限的 `KEY=value` 格式和 YAML，不执行配置文件内容。校验失败时返回非零状态码。
 
+## Helm Chart 来源与版本锁定
+
+- Calico：使用 Tigera 官方 Helm 仓库 `https://docs.tigera.io/calico/charts`，Chart 为 `tigera-operator`。
+- CoreDNS：使用 CoreDNS 官方 Helm 仓库 `https://coredns.github.io/helm`，Chart 为 `coredns`。
+- NodeLocal DNSCache：按项目架构维护仓库内 Chart `charts/nodelocaldns`，后续实现时应验证其渲染结果与 Kubernetes 版本兼容性。
+- 当前三个 Chart 均为 `version_lock_status: pending`。不得把仓库中的名称/来源声明理解为版本已锁定；M5 需完成兼容性、依赖、镜像清单和离线安装审查后再填写精确版本。
+
 ## 开发约定
 
 - 先读现有实现，再做最小范围修改。
