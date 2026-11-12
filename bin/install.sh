@@ -11,7 +11,6 @@ CONFIG_VERSIONS="${CONFIG_VERSIONS:-$ROOT/versions.yaml}"
 CONFIG_CHARTS="${CONFIG_CHARTS:-$ROOT/charts.yaml}"
 
 [[ -r "$CONFIG_ENV" ]] || ks_die "找不到运行配置：$CONFIG_ENV（请从 cluster.env.example 复制）"
-python3 "$ROOT/tools/validate_config.py" --env "$CONFIG_ENV" --versions "$CONFIG_VERSIONS" --charts "$CONFIG_CHARTS"
 ks_config_load "$CONFIG_ENV"
 ks_acquire_lock
 export KS_LOCK_HELD=true

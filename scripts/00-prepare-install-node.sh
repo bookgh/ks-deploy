@@ -10,7 +10,6 @@ CONFIG_ENV="${CONFIG_ENV:-$ROOT/cluster.env}"
 CONFIG_VERSIONS="${CONFIG_VERSIONS:-$ROOT/versions.yaml}"
 CONFIG_CHARTS="${CONFIG_CHARTS:-$ROOT/charts.yaml}"
 [[ -r "$CONFIG_ENV" ]] || ks_die "找不到运行配置：$CONFIG_ENV"
-python3 "$ROOT/tools/validate_config.py" --env "$CONFIG_ENV" --versions "$CONFIG_VERSIONS" --charts "$CONFIG_CHARTS"
 ks_config_load "$CONFIG_ENV"
 
 if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
@@ -20,23 +19,15 @@ os_id="$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')"
 os_version="$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')"
 [[ "$os_id" == rocky && "${os_version%%.*}" == 9 ]] || ks_die "安装节点要求 Rocky Linux 9；当前为 ${os_id:-unknown} ${os_version:-unknown}"
 
-for cmd in curl sha256sum python3 tar cosign systemctl install useradd groupadd getent id; do
+for cmd in curl sha256sum tar cosign systemctl install useradd groupadd getent id awk; do
     command -v "$cmd" >/dev/null 2>&1 || ks_die "安装节点缺少命令：$cmd"
 done
 if [[ "$KS_DRY_RUN" != true && "$EUID" -ne 0 ]]; then
     ks_die "实际准备安装节点需要 root 权限"
 fi
 
-mapfile -t caddy_meta < <(
-    python3 - "$CONFIG_VERSIONS" <<'PY'
-import sys
-import yaml
-
-component = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["components"]["caddy"]
-for key in ("version", "source_url", "sha256", "signature_url", "signature_sha256", "certificate_url", "certificate_sha256", "checksums_url", "checksums_sha256", "checksums_signature_url", "checksums_signature_sha256", "checksums_certificate_url", "checksums_certificate_sha256"):
-    print(component[key])
-PY
-)
+[[ -r "$CONFIG_VERSIONS" ]] || ks_die "找不到版本清单：$CONFIG_VERSIONS"
+mapfile -t caddy_meta < <(awk '/^  caddy:$/ {inside=1; next} inside && /^  [^ ]/ {exit} inside && /^    / {sub(/^    [^:]+:[[:space:]]*/, ""); print}' "$CONFIG_VERSIONS")
 ((${#caddy_meta[@]} == 13)) || ks_die "无法读取 Caddy 锁定版本信息"
 version="${caddy_meta[0]}"
 archive_url="${caddy_meta[1]}"

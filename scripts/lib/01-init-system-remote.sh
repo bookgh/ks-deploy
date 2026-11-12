@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ "$(uname -m)" == x86_64 ]] || { echo "目标架构不是 amd64" >&2; exit 41; }
 source /etc/os-release
 [[ "${ID:-}" == rocky && "${VERSION_ID%%.*}" == 9 ]] || { echo "目标系统不是 Rocky Linux 9" >&2; exit 42; }
-for command in curl sha256sum install sysctl modprobe systemctl hostnamectl python3 grep cmp cp date swapon; do
+for command in curl sha256sum install sysctl modprobe systemctl hostnamectl grep cmp cp date swapon awk sed; do
     command -v "$command" >/dev/null 2>&1 || { echo "缺少命令：$command" >&2; exit 43; }
 done
 [[ -x /usr/sbin/chronyd || -x /usr/bin/chronyd ]] || { echo "未安装 chrony，请先准备 Rocky 9 RPM 依赖" >&2; exit 44; }
@@ -42,31 +42,25 @@ if ! grep -Eq "^[[:space:]]*confdir[[:space:]]+/etc/chrony.d([[:space:]]|$)" /et
     printf "\\nconfdir /etc/chrony.d\\n" >>/etc/chrony.conf
     chrony_changed=true
 fi
-python3 - "$work/hosts.block" <<'PY'
-from pathlib import Path
-import shutil
-import sys
-
-path = Path("/etc/hosts")
-begin, end = "# BEGIN ks-deploy managed nodes", "# END ks-deploy managed nodes"
-text = path.read_text(encoding="utf-8")
-if (begin in text) != (end in text):
-    raise SystemExit("/etc/hosts 中 ks-deploy 管理标记不匹配，已停止")
-start = text.find(begin)
-if start >= 0:
-    finish = text.find(end, start) + len(end)
-    if text.find(begin, start + 1) >= 0 or text.find(end, finish) >= 0:
-        raise SystemExit("/etc/hosts 中存在重复 ks-deploy 管理块，已停止")
-    text = text[:start].rstrip("\n") + "\n" + text[finish:].lstrip("\n")
-block = begin + "\n" + Path(sys.argv[1]).read_text(encoding="utf-8").rstrip() + "\n" + end
-updated = (text.rstrip("\n") + "\n" + block + "\n") if text else block + "\n"
-if updated != path.read_text(encoding="utf-8"):
-    shutil.copy2(path, path.with_name(path.name + ".ks-deploy.bak." + __import__("time").strftime("%Y%m%dT%H%M%SZ", __import__("time").gmtime())))
-    temp = path.with_name(path.name + ".ks-deploy.tmp")
-    temp.write_text(updated, encoding="utf-8")
-    temp.chmod(path.stat().st_mode & 0o777)
-    temp.replace(path)
-PY
+hosts=/etc/hosts
+begin='# BEGIN ks-deploy managed nodes'; end='# END ks-deploy managed nodes'
+begin_count="$(grep -Fc "$begin" "$hosts" || true)"
+end_count="$(grep -Fc "$end" "$hosts" || true)"
+[[ "$begin_count" == "$end_count" && "$begin_count" -le 1 ]] || { echo "/etc/hosts 管理标记缺失或重复，停止" >&2; exit 51; }
+tmp_hosts="$work/hosts.updated"
+if [[ "$begin_count" == 1 ]]; then
+    awk -v b="$begin" -v e="$end" 'BEGIN{skip=0} $0==b{skip=1;next} $0==e{skip=0;next} !skip{print}' "$hosts" >"$tmp_hosts"
+    [[ "$(grep -Fc "$end" "$hosts" || true)" == 1 ]] || { echo "/etc/hosts 管理块结束标记缺失" >&2; exit 51; }
+else
+    cat "$hosts" >"$tmp_hosts"
+fi
+printf '\n%s\n' "$begin" >>"$tmp_hosts"
+cat "$work/hosts.block" >>"$tmp_hosts"
+printf '%s\n' "$end" >>"$tmp_hosts"
+if ! cmp -s "$tmp_hosts" "$hosts"; then
+    cp -a "$hosts" "$hosts.ks-deploy.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+    install -m "$(stat -c %a "$hosts")" "$tmp_hosts" "$hosts"
+fi
 hostnamectl set-hostname "$node_name"
 for module in overlay br_netfilter nf_conntrack; do modprobe "$module"; done
 sysctl --system >/dev/null
@@ -80,21 +74,11 @@ chronyc sources -n >/dev/null
 if [[ "$selinux_disable" == true ]]; then
     mode="$(getenforce 2>/dev/null || true)"
     [[ "$mode" != Enforcing ]] || setenforce 0
-    python3 - <<'PY'
-from pathlib import Path
-import shutil
-import time
-
-path = Path("/etc/selinux/config")
-text = path.read_text(encoding="utf-8")
-lines = ["SELINUX=disabled" if line.startswith("SELINUX=") else line for line in text.splitlines()]
-if not any(line.startswith("SELINUX=") for line in lines):
-    lines.append("SELINUX=disabled")
-updated = "\n".join(lines) + "\n"
-if updated != text:
-    shutil.copy2(path, path.with_name(path.name + ".ks-deploy.bak." + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())))
-    path.write_text(updated, encoding="utf-8")
-PY
+    selinux_file=/etc/selinux/config
+    if ! grep -qx 'SELINUX=disabled' "$selinux_file"; then
+        cp -a "$selinux_file" "$selinux_file.ks-deploy.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+        if grep -q '^SELINUX=' "$selinux_file"; then sed -i 's/^SELINUX=.*/SELINUX=disabled/' "$selinux_file"; else printf '\nSELINUX=disabled\n' >>"$selinux_file"; fi
+    fi
 fi
 if [[ "$firewall_uninstall" == true ]] && rpm -q firewalld >/dev/null 2>&1; then
     systemctl disable --now firewalld
@@ -105,31 +89,12 @@ sysctl -n net.ipv4.ip_forward | grep -qx 1
 systemctl is-active --quiet chronyd
 if [[ "$swap_disable" == true ]]; then
     swapoff --all
-    python3 - <<'PY'
-from pathlib import Path
-import shutil
-import time
-
-path = Path("/etc/fstab")
-text = path.read_text(encoding="utf-8")
-lines = text.splitlines(keepends=True)
-updated_lines = []
-changed = False
-for line in lines:
-    fields = line.split()
-    if fields and not line.lstrip().startswith("#") and len(fields) >= 3 and fields[2] == "swap":
-        updated_lines.append("# ks-deploy disabled swap entry: " + line)
-        changed = True
-    else:
-        updated_lines.append(line)
-if changed:
-    shutil.copy2(path, path.with_name(path.name + ".ks-deploy.bak." + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())))
-    temp = path.with_name(path.name + ".ks-deploy.tmp")
-    temp.write_text("".join(updated_lines), encoding="utf-8")
-    temp.chmod(path.stat().st_mode & 0o777)
-    temp.replace(path)
-PY
+    fstab=/etc/fstab
+    if awk '!/^[[:space:]]*#/ && NF>=3 && $3=="swap" {found=1} END{exit !found}' "$fstab"; then
+        cp -a "$fstab" "$fstab.ks-deploy.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+        awk '{if ($0 !~ /^[[:space:]]*#/ && NF>=3 && $3=="swap") print "# ks-deploy disabled swap entry: " $0; else print}' "$fstab" >"$work/fstab.updated"
+        install -m "$(stat -c %a "$fstab")" "$work/fstab.updated" "$fstab"
+    fi
     [[ -z "$(swapon --show --noheadings)" ]] || { echo "swap 仍处于启用状态" >&2; exit 50; }
 fi
 printf "系统初始化完成：%s\\n" "$node_name"
-

@@ -10,13 +10,12 @@ CONFIG_ENV="${CONFIG_ENV:-$ROOT/cluster.env}"
 CONFIG_VERSIONS="${CONFIG_VERSIONS:-$ROOT/versions.yaml}"
 CONFIG_CHARTS="${CONFIG_CHARTS:-$ROOT/charts.yaml}"
 [[ -r "$CONFIG_ENV" ]] || ks_die "找不到运行配置：$CONFIG_ENV"
-python3 "$ROOT/tools/validate_config.py" --env "$CONFIG_ENV" --versions "$CONFIG_VERSIONS" --charts "$CONFIG_CHARTS"
 ks_config_load "$CONFIG_ENV"
 
 if [[ "$KS_DRY_RUN" != true && "$EUID" -ne 0 ]]; then
     ks_die "系统初始化必须从安装节点以 root 执行"
 fi
-for cmd in curl sha256sum python3 install awk cmp cat chmod cp date mktemp; do
+for cmd in curl sha256sum install awk cmp cat chmod cp date mktemp; do
     command -v "$cmd" >/dev/null 2>&1 || ks_die "安装节点缺少命令：$cmd"
 done
 
@@ -107,4 +106,3 @@ for index in "${!node_ips[@]}"; do
     ks_ssh_exec "${node_ips[$index]}" 2 10 /bin/bash -c "$remote_script" ks-deploy "${args[@]}"
 done
 ks_info "系统初始化已完成；SELinux 配置变更需要按主机状态重启后确认 Disabled。"
-
