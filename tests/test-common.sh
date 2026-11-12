@@ -67,4 +67,3 @@ ks_acquire_lock >/dev/null 2>&1 || fail 'Dry-run lock wrapper failed'
 [[ ! -e "$work/dry-run-marker" && ! -e "$work/download" ]] || fail 'Dry-run 产生文件副作用'
 [[ ! -e "$work/dry-run" ]] || fail 'Dry-run 创建锁文件或目录'
 pass 'Dry-run 不写文件，且不调用 SSH/HTTP'
-
