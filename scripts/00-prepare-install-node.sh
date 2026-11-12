@@ -150,7 +150,7 @@ write_managed() {
 }
 
 changed=false
-if write_managed "$caddyfile" 0640 <<EOF
+if write_managed "$caddyfile" 0640 <<EOF; then changed=true; fi
 {
     admin 127.0.0.1:2019
 }
@@ -162,8 +162,7 @@ http://$caddy_bind:$caddy_port {
     file_server
 }
 EOF
-then changed=true; fi
-if write_managed "$unit" 0644 <<EOF
+if write_managed "$unit" 0644 <<EOF; then changed=true; fi
 [Unit]
 Description=ks-deploy artifact HTTP server (Caddy)
 After=network-online.target
@@ -194,7 +193,7 @@ StateDirectoryMode=0750
 [Install]
 WantedBy=multi-user.target
 EOF
-then changed=true; fi
+chown ks-deploy-http:ks-deploy-http "$caddyfile"
 
 "$binary" validate --config "$caddyfile"
 systemctl daemon-reload
