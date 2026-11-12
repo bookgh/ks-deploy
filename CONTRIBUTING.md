@@ -20,7 +20,7 @@ make install-dev
 
 1. 将 `cluster.env.example` 复制为 `cluster.env`，填写实际节点、网段和目录。
 2. `cluster.env` 是严格的 `KEY=value` 文件，不是通用 Shell 脚本；不要写命令替换、变量展开或执行语句。
-3. `versions.yaml` 是组件版本唯一事实源。只有完成官方来源、checksum/签名及兼容性审查后才能锁定版本。
+3. `versions.yaml` 是组件版本唯一事实源。带 `source_url` 的制品必须同时提供经上游来源核实的 SHA256；支持签名的上游制品还应在制品准备阶段验证签名。
 4. `charts.yaml` 先登记仓库与 Chart 名称；`version_lock_status: pending` 表示尚未完成兼容性审查。改为 `locked` 时必须填写精确 SemVer 版本。
 5. 不要提交真实 IP、密码、Token、SSH 私钥、CA 私钥、PKI、kubeconfig 或离线制品。
 

@@ -56,6 +56,13 @@ class ConfigValidatorTests(unittest.TestCase):
         errors = self.validate(versions=bad_versions)
         self.assertTrue(any("kubernetes.version" in error for error in errors), errors)
 
+    def test_component_source_requires_sha256(self) -> None:
+        bad_versions = self.versions.replace(
+            "    sha256: 5b8cb7faf8726a2028ad96a66e54e6e81e8f361bc6175e5d22bbd997cc5177fb\\n", ""
+        )
+        errors = self.validate(versions=bad_versions)
+        self.assertTrue(any("components.caddy.sha256" in error for error in errors), errors)
+
     def test_invalid_semver_identifiers_are_rejected(self) -> None:
         invalid_versions = ("v1.37.2-", "v1.37.2-01", "v01.37.2", "v1.37.2+build.")
         for invalid_version in invalid_versions:

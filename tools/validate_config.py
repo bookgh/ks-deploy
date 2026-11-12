@@ -306,13 +306,19 @@ def validate_versions(data: Any, source: str) -> list[str]:
             if not isinstance(name, str) or not isinstance(config, dict):
                 errors.append(f"{source}: components 下的每个组件必须是 mapping")
                 continue
-            unknown_component = set(config) - {"version", "source_url"}
+            unknown_component = set(config) - {"version", "source_url", "sha256"}
             if unknown_component:
                 errors.append(f"{source}: components.{name} 存在未知字段：{', '.join(sorted(map(str, unknown_component)))}")
             if "version" not in config or not _is_version(config.get("version")):
                 errors.append(f"{source}: components.{name}.version 必须是非空精确 SemVer 版本")
             if "source_url" in config and (not isinstance(config["source_url"], str) or not config["source_url"].startswith("https://")):
                 errors.append(f"{source}: components.{name}.source_url 必须使用 HTTPS")
+            if "source_url" in config:
+                digest = config.get("sha256")
+                if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                    errors.append(f"{source}: components.{name}.sha256 必须是 64 位小写 SHA256")
+            elif "sha256" in config:
+                errors.append(f"{source}: components.{name}.sha256 需要同时配置 source_url")
     return errors
 
 

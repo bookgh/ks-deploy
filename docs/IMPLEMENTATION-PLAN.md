@@ -45,6 +45,8 @@
 
 当前 M1 尚未达到验收完成：公共函数库和依赖顺序调度骨架已实现，但阶段脚本本身尚未实现。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy 单元尚无集成验证；不得把 M1 标为完成。
 
+版本解析准备：已从 Caddy 官方 Release `v2.11.9` 固定 amd64 tarball URL 与 SHA256，组件 source URL 缺少 SHA256 时配置校验失败。哈希来自 GitHub 官方 Release API 资产 digest；签名验证和安装节点服务尚未实现。
+
 ## M2：系统初始化与 PKI
 
 **范围**
