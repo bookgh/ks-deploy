@@ -2,7 +2,7 @@
 
 > Rocky Linux 9 / amd64 的 Kubernetes 原生二进制部署框架。目标 Kubernetes 版本：`v1.37.2`。禁止使用 kubeadm、k3s、RKE 等集群封装工具。
 
-**当前阶段：M0 已完成；M1 安装节点准备与依赖调度器进行中。** 公共库含基于 `flock` 的部署互斥和无副作用 Dry-run；依赖顺序调度入口和 `scripts/00-prepare-install-node.sh` 已提供基础实现：固定校验 Caddy 制品与 Sigstore 签名、配置 systemd HTTP 服务。其他阶段脚本尚未实现；这不代表 Kubernetes 集群部署、离线制品闭包或 Rocky Linux 9 实机验收已经完成。
+**当前阶段：M0 已完成；M1 仍在进行，M2 系统初始化已开始。** 公共库含部署互斥和 Dry-run；安装节点 Caddy 准备与依赖顺序调度已提供基础实现。`scripts/01-init-system.sh` 可通过 SSH 在节点应用由 Caddy 分发并校验 SHA256 的系统配置，包括可配置的 Chrony 源和 swap 开关。其余 PKI、Kubernetes、运行时、插件和离线制品阶段尚未实现；没有 Rocky Linux 9 集群实机验收证据。
 
 ## 文档导航
 
@@ -67,3 +67,4 @@ docs/IMPLEMENTATION-PROMPT.md、docs/IMPLEMENTATION-PLAN.md，以及仓库中已
 - 离线模式必须证明制品闭包完整；禁止部署时临时联网下载离线制品。
 - 所有危险清理、证书轮换、etcd 恢复和版本回滚都必须有显式保护与操作手册。
 - 100 年证书有效期是用户给定的兼容性要求，不是安全最佳实践；必须额外设计短期叶证书轮换、CA 私钥保护和到期监控。
+

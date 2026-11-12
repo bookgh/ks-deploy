@@ -52,19 +52,21 @@
 ## M2：系统初始化与 PKI
 
 **范围**
-- [ ] 01-init-system.sh
-- [ ] sysctl、模块、limits、Chrony、hostname/hosts 模板
+- [~] 01-init-system.sh：SSH 远端校验、HTTP/SHA256 拉取配置、Master/Worker 幂等应用
+- [~] sysctl、模块、limits、Chrony、hostname/hosts 配置；Rocky 9 实机结果待验证
 - [ ] CFSSL CA 配置和证书 profile
 - [ ] 02-gen-ca-and-certs.sh
 - [ ] 11-rotate-certificates.sh
 - [ ] 证书检查与权限检查
 
 **验收**
-- Rocky Linux 9 目标节点预检通过。
+- [ ] Rocky Linux 9 目标节点预检通过（远端实机尚未连接验证）。
 - 重复运行不会覆盖有效证书或重复写入配置。
 - 证书 SAN、用途、有效期、链和私钥配对检查通过。
 - 100 年 duration 格式经过 CFSSL 实际测试。
 - 轮换演练包含备份、签发、分发、重启、验证和回滚。
+
+`01-init-system.sh` 已生成带集群节点映射的 `/etc/hosts` 管理块、内核模块/sysctl、limits 和 Chrony 配置；由安装节点 Caddy 暴露配置文件，远端先验证 SHA256 再应用。它按 `SWAP_DISABLE` 关闭运行时 swap 并备份后注释 `/etc/fstab` swap 项。Dry-run 仅展示 SSH 命令，不创建 staging 文件。SELinux/firewalld 依据现有开关处理；SELinux 从 enforcing 转为 disabled 仍需重启，firewalld 开关为 true 时会通过 dnf 删除软件包。目标机需预装 chrony、curl、Python 3 和 Rocky 9 基础工具。该实现尚未在 Rocky Linux 9 远端节点执行，不能视为 M2 验收通过。
 
 ## M3：etcd、容器运行时与控制平面
 
@@ -202,3 +204,4 @@
 - 未执行/未验证：未验证 Rocky Linux 9；未实测 SSH HostKey、超时、远端退出或 HTTP 下载；未启动 Caddy。
 - 遗留风险：尚未实现文件锁、SSH key 配置、RPM repo、远端 HTTP 测试；安装脚本依赖 Rocky 9 上预装的 cosign、PyYAML、curl 等工具，需补离线依赖闭包和主机实测；不满足完整 M1 验收，更不代表集群部署完成。
 - Commit：本轮主提交 `e493360`；换行修复 `6418ec6`；错误处理及静态检查收尾 `9d8560e`、`3540965`、`b1c1829`、`cf57510`、`121ebdc`。
+

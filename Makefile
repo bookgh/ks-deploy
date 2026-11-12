@@ -20,6 +20,7 @@ test:
 	PYTHON=$(PYTHON) bash tests/test-config-cli.sh
 	bash tests/test-common.sh
 	bash tests/test-orchestrator.sh
+	bash tests/test-system-init-template.sh
 
 bash-n:
 	@mapfile -d '' files < <(find . -type f -name '*.sh' -not -path './.git/*' -not -path './.venv/*' -print0); \
@@ -36,3 +37,4 @@ shfmt:
 lint: bash-n shellcheck shfmt
 
 check: validate test lint
+

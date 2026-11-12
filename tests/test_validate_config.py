@@ -108,6 +108,11 @@ class ConfigValidatorTests(unittest.TestCase):
         errors = self.validate(env=bad_env)
         self.assertTrue(any("PROXY_MODE" in error and "只允许" in error for error in errors), errors)
 
+    def test_invalid_chrony_server_is_rejected(self) -> None:
+        bad_env = self.env.replace("CHRONY_SERVERS=pool.ntp.org,time.cloudflare.com", "CHRONY_SERVERS=bad;server")
+        errors = self.validate(env=bad_env)
+        self.assertTrue(any("CHRONY_SERVERS" in error for error in errors), errors)
+
     def test_locked_chart_without_version_is_rejected(self) -> None:
         bad_charts = self.charts.replace("version_lock_status: pending", "version_lock_status: locked", 1)
         errors = self.validate(charts=bad_charts)
@@ -136,3 +141,4 @@ class ConfigValidatorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

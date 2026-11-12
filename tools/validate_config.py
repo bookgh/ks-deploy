@@ -15,15 +15,15 @@ from yaml.constructor import ConstructorError
 
 ENV_KEYS = {
     "CLUSTER_NAME", "INSTALL_NODE_IP", "MASTER_NODES", "WORKER_NODES",
-    "SSH_USER", "SSH_PORT", "CADDY_BIND", "CADDY_PORT", "CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT",
+    "SSH_USER", "SSH_PORT", "CHRONY_SERVERS", "CADDY_BIND", "CADDY_PORT", "CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT",
     "POD_CIDR", "SERVICE_CIDR", "CLUSTER_DNS", "CLUSTER_DOMAIN",
     "NODELOCAL_DNS_IP", "CONTAINER_RUNTIME", "PROXY_MODE", "IMAGE_MODE",
     "OFFLINE_MODE", "HARBOR_ENABLED", "HARBOR_NODE_IP", "HARBOR_DOMAIN",
-    "HARBOR_SCHEME", "HARBOR_PROJECT", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL",
+    "HARBOR_SCHEME", "HARBOR_PROJECT", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL", "SWAP_DISABLE",
     "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT",
     "DOCKER_ROOT", "ETCD_DATA_DIR",
 }
-BOOLEAN_KEYS = {"OFFLINE_MODE", "HARBOR_ENABLED", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL"}
+BOOLEAN_KEYS = {"OFFLINE_MODE", "HARBOR_ENABLED", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL", "SWAP_DISABLE"}
 PATH_KEYS = {"CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"}
 NUMERIC_IDENTIFIER = r"(?:0|[1-9][0-9]*)"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -137,6 +137,13 @@ def validate_env(values: dict[str, str]) -> list[str]:
         errors.append("CLUSTER_NAME: 必须是 DNS 风格的小写名称")
     if not re.fullmatch(r"[a-z_][a-z0-9_-]*", values.get("SSH_USER", "")):
         errors.append("SSH_USER: 用户名格式非法")
+
+    chrony_servers = values.get("CHRONY_SERVERS", "").split(",")
+    if not chrony_servers or any(
+        not re.fullmatch(r"(?:[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?|(?:[0-9]{1,3}\.){3}[0-9]{1,3})", server)
+        for server in chrony_servers
+    ):
+        errors.append("CHRONY_SERVERS: 必须是以逗号分隔的主机名或 IPv4 地址")
 
     for key in ("SSH_PORT", "CADDY_PORT"):
         try:
@@ -429,3 +436,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -90,7 +90,7 @@ ks_config_load() {
             return 1
         fi
         case "$key" in
-            CLUSTER_NAME | INSTALL_NODE_IP | MASTER_NODES | WORKER_NODES | SSH_USER | SSH_PORT | CADDY_BIND | CADDY_PORT | CADDY_ROOT | CADDY_CONFIG_DIR | CADDY_BIN_ROOT | POD_CIDR | SERVICE_CIDR | CLUSTER_DNS | CLUSTER_DOMAIN | NODELOCAL_DNS_IP | CONTAINER_RUNTIME | PROXY_MODE | IMAGE_MODE | OFFLINE_MODE | HARBOR_ENABLED | HARBOR_NODE_IP | HARBOR_DOMAIN | HARBOR_SCHEME | HARBOR_PROJECT | SELINUX_DISABLE | FIREWALLD_UNINSTALL | PKI_DIR | ARTIFACTS_ROOT | KUBELET_ROOT | CONTAINERD_ROOT | DOCKER_ROOT | ETCD_DATA_DIR) ;;
+            CLUSTER_NAME | INSTALL_NODE_IP | MASTER_NODES | WORKER_NODES | SSH_USER | SSH_PORT | CHRONY_SERVERS | CADDY_BIND | CADDY_PORT | CADDY_ROOT | CADDY_CONFIG_DIR | CADDY_BIN_ROOT | POD_CIDR | SERVICE_CIDR | CLUSTER_DNS | CLUSTER_DOMAIN | NODELOCAL_DNS_IP | CONTAINER_RUNTIME | PROXY_MODE | IMAGE_MODE | OFFLINE_MODE | HARBOR_ENABLED | HARBOR_NODE_IP | HARBOR_DOMAIN | HARBOR_SCHEME | HARBOR_PROJECT | SELINUX_DISABLE | FIREWALLD_UNINSTALL | SWAP_DISABLE | PKI_DIR | ARTIFACTS_ROOT | KUBELET_ROOT | CONTAINERD_ROOT | DOCKER_ROOT | ETCD_DATA_DIR) ;;
             *)
                 ks_die "$file:$line_no：未知配置键：$key"
                 return 1
@@ -195,6 +195,8 @@ ks_http_download() {
 
 ks_ssh_exec() {
     local host="$1" retries="$2" connect_timeout="$3" command="" arg attempt
+    local ssh_user="${KS_CONFIG[SSH_USER]:-${SSH_USER:-root}}"
+    local ssh_port="${KS_CONFIG[SSH_PORT]:-${SSH_PORT:-22}}"
     shift 3
     if [[ ! "$host" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]]; then
         ks_die "SSH 主机名/IP 非法：$host"
@@ -204,11 +206,11 @@ ks_ssh_exec() {
         ks_die "SSH 重试次数必须为 1 到 5 次，连接超时须为 1 到 300 秒"
         return 1
     fi
-    if [[ ! "${SSH_PORT:-22}" =~ ^[1-9][0-9]{0,4}$ || "${SSH_PORT:-22}" -gt 65535 ]]; then
+    if [[ ! "$ssh_port" =~ ^[1-9][0-9]{0,4}$ || "$ssh_port" -gt 65535 ]]; then
         ks_die "SSH 端口非法"
         return 1
     fi
-    if [[ ! "${SSH_USER:-root}" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]]; then
+    if [[ ! "$ssh_user" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]]; then
         ks_die "SSH 用户名非法"
         return 1
     fi
@@ -220,13 +222,13 @@ ks_ssh_exec() {
         printf -v arg '%q' "$arg"
         command+="${command:+ }$arg"
     done
-    local -a opts=(-p "${SSH_PORT:-22}" -o "ConnectTimeout=$connect_timeout" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=${SSH_KNOWN_HOSTS:-$HOME/.ssh/known_hosts}" -o ServerAliveInterval=15 -o ServerAliveCountMax=2)
+    local -a opts=(-p "$ssh_port" -o "ConnectTimeout=$connect_timeout" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=${SSH_KNOWN_HOSTS:-$HOME/.ssh/known_hosts}" -o ServerAliveInterval=15 -o ServerAliveCountMax=2)
     if [[ "$KS_DRY_RUN" == true ]]; then
-        ks_info "Dry-run：ssh ${SSH_USER:-root}@$host <安全引用命令>"
+        ks_info "Dry-run：ssh $ssh_user@$host <安全引用命令>"
         return 0
     fi
     for ((attempt = 1; attempt <= retries; attempt++)); do
-        if timeout --foreground "${SSH_COMMAND_TIMEOUT:-300}" ssh "${opts[@]}" "${SSH_USER:-root}@$host" "$command"; then
+        if timeout --foreground "${SSH_COMMAND_TIMEOUT:-300}" ssh "${opts[@]}" "$ssh_user@$host" "$command"; then
             return 0
         else
             ((attempt == retries)) || sleep "$attempt"
@@ -270,3 +272,4 @@ ks_acquire_lock() {
     fi
     ks_info "已获得部署互斥锁：$lock_file"
 }
+
