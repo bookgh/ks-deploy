@@ -15,6 +15,14 @@ kubernetes:
     - kube-proxy
     - kubectl
 components:
+  cfssl:
+    version: v1.7.0
+    source_url: https://github.com/cloudflare/cfssl/releases/download/v1.7.0/cfssl_1.7.0_linux_amd64
+    sha256: 0f35f42860362c109da24acb16f87e1857f005dfc4b531693993e74433209424
+  cfssljson:
+    version: v1.7.0
+    source_url: https://github.com/cloudflare/cfssl/releases/download/v1.7.0/cfssljson_1.7.0_linux_amd64
+    sha256: c8a9e5c438b2f66802f538dd86ee15f901ce38556f90323dd52cb66796e10b93
   caddy:
     version: v2.11.9
     source_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_linux_amd64.tar.gz
@@ -29,3 +37,4 @@ components:
     checksums_signature_sha256: 59bbd12986f37c27ce528a934a484ff5b33a23557dae207e674eb904d49bd8b8
     checksums_certificate_url: https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_checksums.txt.pem
     checksums_certificate_sha256: 146eaaf82a9b4b0b14e790c7cd3148c04f56aec4e5a94f99eecdd1d88e191746
+

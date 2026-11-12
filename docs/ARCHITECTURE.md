@@ -123,7 +123,7 @@ SSH 仅负责远程命令执行和 SSH 公钥配置；软件、二进制、Chart
 
 使用 CFSSL 自建 CA，至少拆分 Kubernetes Root CA、ETCD CA、Front Proxy CA；ServiceAccount signing key 独立管理；Harbor 证书独立。证书覆盖 API Server serving（所有 VIP/DNS/IP SAN）、etcd server/peer/client、controller-manager、scheduler、kubelet client/server、kube-proxy、admin、front-proxy-client、ServiceAccount key pair，以及 Harbor 域名证书。
 
-用户要求证书有效期 100 年。实现前必须验证 CFSSL 实际支持的 duration 格式；不能未经验证直接写 `100y`。生成后检查 NotAfter、SAN、KeyUsage、ExtKeyUsage、签发者、链、密钥配对、权限。100 年不是安全最佳实践，必须额外提供证书轮换、到期扫描、CA 私钥离线备份、审计、分阶段替换和回滚。CA 轮换与叶证书轮换是不同流程。kubelet 自动轮换策略与自定义静态长期证书策略必须明确，不能冲突。
+用户要求证书有效期 100 年。CFSSL 使用 Go duration，最大时间单位是小时；当前实现使用 `876000h`（100 × 365 天），并在 CI 中使用锁定版本的 CFSSL 实际签发根 CA 和叶证书后比较 NotAfter/NotBefore。不能写不受支持的 `100y`。生成后检查 SAN、KeyUsage、ExtKeyUsage、签发者、链、密钥配对和权限。100 年不是安全最佳实践，必须额外提供证书轮换、到期扫描、CA 私钥离线备份、审计、分阶段替换和回滚。CA 轮换与叶证书轮换是不同流程。kubelet 自动轮换策略与自定义静态长期证书策略必须明确，不能冲突。
 
 `pki/` 存在时逐项校验，不可整个目录存在就无条件跳过；缺项/损坏时停止并要求显式修复策略，不得静默覆盖 CA 私钥。私钥目录 0700、私钥文件 0600。PKI 不得放入 Caddy 公共根目录。
 
@@ -292,3 +292,4 @@ ks-deploy/
 ## 20. 完成定义
 
 功能只有在代码实现、静态检查、自动化测试、Rocky Linux 9 目标环境验证、文档同步和风险记录均完成后，才能标记“已完成”。文件存在不代表功能已实现。
+

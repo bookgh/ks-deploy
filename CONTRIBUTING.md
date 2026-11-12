@@ -58,5 +58,7 @@ make validate CONFIG_ENV=cluster.env CONFIG_VERSIONS=versions.yaml CONFIG_CHARTS
 - Dry-run 不得产生本地或远端副作用；幂等判断必须核验真实状态。
 - 公共 Bash 函数位于 `bin/common.sh`；配置必须通过允许列表解析，不得 `source`/`eval`。HTTP 下载调用必须提供 SHA256；SSH 默认启用 `StrictHostKeyChecking`，且只有明确幂等的命令允许设置多次重试。
 - `scripts/00-prepare-install-node.sh` 需要 Rocky Linux 9、root、Python PyYAML、cosign、curl、tar 和 systemd。Caddy/签名资产的版本与摘要固定在 `versions.yaml`；离线运行必须先准备完整签名资产集合。
+- `scripts/02-gen-ca-and-certs.sh` 使用 `versions.yaml` 中锁定的 CFSSL/cfssljson 版本与 SHA256。`make test` 的 CFSSL duration 集成测试在 `CFSSL_BIN`、`CFSSLJSON_BIN` 未设置时会跳过；CI 会先从官方 Release 下载并校验这两个二进制，再实测 `876000h`。
 - 完成功能、测试、文档和里程碑记录后再集中提交；commit message 使用中文并直接提交 main。
 - 不因普通 CI 或代码变更触发 Release 制品构建。
+

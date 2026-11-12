@@ -54,10 +54,13 @@
 **范围**
 - [~] 01-init-system.sh：SSH 远端校验、HTTP/SHA256 拉取配置、Master/Worker 幂等应用
 - [~] sysctl、模块、limits、Chrony、hostname/hosts 配置；Rocky 9 实机结果待验证
-- [ ] CFSSL CA 配置和证书 profile
-- [ ] 02-gen-ca-and-certs.sh
+- [~] CFSSL v1.7.0 / cfssljson v1.7.0 制品版本与 SHA256 锁定
+- [~] CFSSL CA 配置、请求渲染与证书 profile
+- [~] 02-gen-ca-and-certs.sh：三组独立 CA、组件证书、幂等逐项验证；远端分发待实现
+- [~] `tools/verify_pki.py`：SAN、EKU、链、密钥配对、权限和 876000h 有效期验证
+- [~] CFSSL 876000h 实际签发集成测试；已加入 CI，当前提交结果待跑
 - [ ] 11-rotate-certificates.sh
-- [ ] 证书检查与权限检查
+- [~] 证书检查与权限检查脚本已实现；目标主机执行待验证
 
 **验收**
 - [ ] Rocky Linux 9 目标节点预检通过（远端实机尚未连接验证）。
@@ -67,6 +70,8 @@
 - 轮换演练包含备份、签发、分发、重启、验证和回滚。
 
 `01-init-system.sh` 已生成带集群节点映射的 `/etc/hosts` 管理块、内核模块/sysctl、limits 和 Chrony 配置；由安装节点 Caddy 暴露配置文件，远端先验证 SHA256 再应用。它按 `SWAP_DISABLE` 关闭运行时 swap 并备份后注释 `/etc/fstab` swap 项。Dry-run 仅展示 SSH 命令，不创建 staging 文件。SELinux/firewalld 依据现有开关处理；SELinux 从 enforcing 转为 disabled 仍需重启，firewalld 开关为 true 时会通过 dnf 删除软件包。目标机需预装 chrony、curl、Python 3 和 Rocky 9 基础工具。该实现尚未在 Rocky Linux 9 远端节点执行，不能视为 M2 验收通过。
+
+`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。`tools/render_pki.py` 生成 Kubernetes、etcd、Front Proxy（及可选 Harbor）CA 请求和组件 CSR；`02-gen-ca-and-certs.sh` 以 876000h（100×365 天）签发，使用 staging 目录校验后原子发布，PKI 已存在时只逐项验证，缺项、配置变更或损坏均停止且不覆盖。`tools/verify_pki.py` 检查证书链、SAN、身份、EKU、公私钥匹配、权限和有效期。CI 已配置为下载并校验锁定的官方 CFSSL 后执行真实 CA/叶证书 duration 集成测试，结果待本提交运行。PKI 仍只生成在安装节点；向 Master/Worker 保密分发证书的加密传输和 Rocky 9 实机签发/验证尚未完成。100 年证书依然有 CA 私钥长期暴露风险，轮换与到期审计仍未实现。
 
 ## M3：etcd、容器运行时与控制平面
 

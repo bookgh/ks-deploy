@@ -16,7 +16,7 @@ ks_config_load "$CONFIG_ENV"
 if [[ "$KS_DRY_RUN" != true && "$EUID" -ne 0 ]]; then
     ks_die "系统初始化必须从安装节点以 root 执行"
 fi
-for cmd in curl sha256sum python3 install; do
+for cmd in curl sha256sum python3 install awk cmp cat chmod cp date mktemp; do
     command -v "$cmd" >/dev/null 2>&1 || ks_die "安装节点缺少命令：$cmd"
 done
 
