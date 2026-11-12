@@ -72,7 +72,7 @@
 
 `01-init-system.sh` 已生成带集群节点映射的 `/etc/hosts` 管理块、内核模块/sysctl、limits 和 Chrony 配置；由安装节点 Caddy 暴露配置文件，远端先验证 SHA256 再应用。它按 `SWAP_DISABLE` 关闭运行时 swap 并备份后注释 `/etc/fstab` swap 项。Dry-run 仅展示 SSH 命令，不创建 staging 文件。SELinux/firewalld 依据现有开关处理；SELinux 从 enforcing 转为 disabled 仍需重启，firewalld 开关为 true 时会通过 dnf 删除软件包。远端系统配置处理已移除 Python 依赖，使用 Rocky Linux 9 基础工具。该实现尚未在 Rocky Linux 9 远端节点执行，不能视为 M2 验收通过。
 
-`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。部署链路现由 `bin/pki.sh` 纯 Bash 渲染 CA/叶证书请求和 TSV 清单，CFSSL 签发；OpenSSL 检查 CA 约束、证书链、SAN、EKU、CN、密钥配对、权限及 876000h（100×365 天）有效期。PKI 流程使用 staging 目录校验后原子发布；PKI 已存在时比较请求配置并逐项验证证书，缺项、配置变更或损坏均停止且不覆盖。部署脚本 Python-free 静态测试与渲染 smoke test 已加入 `make test`，但本机未具备 Bash/CFSSL 执行环境，需由 Linux CI 实测；Python 配置 schema 校验仍是开发/CI 工具，不在部署运行路径。PKI 仍只生成在安装节点；向 Master/Worker 保密分发证书的加密传输和 Rocky 9 实机签发/验证尚未完成。100 年证书依然有 CA 私钥长期暴露风险，轮换与到期审计仍未实现。
+`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。部署链路现由 `bin/pki.sh` 纯 Bash 渲染 CA/叶证书请求和 TSV 清单，CFSSL 签发；OpenSSL 检查 CA 约束、证书链、SAN、EKU、CN、密钥配对、权限及 876000h（100×365 天）有效期。PKI 流程使用 staging 目录校验后原子发布；PKI 已存在时比较请求配置并逐项验证证书，缺项、配置变更或损坏均停止且不覆盖。部署脚本 Python-free 静态测试与渲染 smoke test 已加入 `make test`，GitHub Actions 的配置校验和测试阶段通过（含 22 项 Python 单测、shell 渲染 smoke test、CFSSL duration 测试）；本机无 Bash，未做本地实测。完整 ShellCheck/shfmt 阶段按用户指示延后，当前 workflow 在既有 `scripts/lib/01-init-system-remote.sh` ShellCheck 项失败，不作为本次 PKI 测试结果。Python 配置 schema 校验仍是开发/CI 工具，不在部署运行路径。PKI 仍只生成在安装节点；向 Master/Worker 保密分发证书的加密传输和 Rocky 9 实机签发/验证尚未完成。100 年证书依然有 CA 私钥长期暴露风险，轮换与到期审计仍未实现。
 
 ## M3：etcd、容器运行时与控制平面
 
