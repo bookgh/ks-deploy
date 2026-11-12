@@ -29,7 +29,7 @@
 
 **范围**
 - [~] bin/common.sh：日志、颜色、进度、错误 trap、Dry-run、备份、SHA256；锁尚未实现
-- [ ] bin/install.sh 与 bin/deploy-step.sh 基础编排
+- [~] bin/install.sh 与 bin/deploy-step.sh 依赖顺序编排骨架
 - [ ] SSH executor：超时、有限重试、HostKey 校验、远端安全命令执行
 - [ ] 00-prepare-install-node.sh
 - [ ] Caddyfile、Systemd unit
@@ -43,7 +43,7 @@
 - 文件只通过 HTTP 分发，不使用 SCP/rsync。
 - Caddy 由 Systemd 托管，安装节点端口可达性检查通过。
 
-当前 M1 尚未达到验收完成：本轮只实现公共函数库中的配置解析、日志、进度、错误 trap、Dry-run、备份、HTTP 下载校验和 SSH 命令执行基础。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy 单元尚无集成验证；不得把 M1 标为完成。
+当前 M1 尚未达到验收完成：公共函数库和依赖顺序调度骨架已实现，但阶段脚本本身尚未实现。SSH 连通性、HostKey 错误分类、实际 HTTP 服务和 Caddy 单元尚无集成验证；不得把 M1 标为完成。
 
 ## M2：系统初始化与 PKI
 

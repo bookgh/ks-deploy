@@ -2,7 +2,7 @@
 
 > Rocky Linux 9 / amd64 的 Kubernetes 原生二进制部署框架。目标 Kubernetes 版本：`v1.37.2`。禁止使用 kubeadm、k3s、RKE 等集群封装工具。
 
-**当前阶段：M0 已完成；M1 公共 Bash 执行库开始实现。** `bin/common.sh` 提供不执行配置文件的解析、受控 Dry-run、HTTP 下载 SHA256 校验、安全 SSH 命令引用、日志和备份基础函数。其余部署脚本尚未实现；这不代表 Kubernetes 部署、离线制品或 Rocky Linux 9 生产环境验证已经完成。
+**当前阶段：M0 已完成；M1 执行基础与依赖调度器进行中。** `bin/common.sh` 提供安全配置解析、Dry-run、HTTP 下载 SHA256 校验、SSH 执行基础、日志和备份；`bin/install.sh` 与 `bin/deploy-step.sh` 提供依赖顺序调度骨架。各阶段部署脚本尚未实现；这不代表 Kubernetes 部署、离线制品或 Rocky Linux 9 生产环境验证已经完成。
 
 ## 文档导航
 

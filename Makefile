@@ -19,6 +19,7 @@ test:
 	$(PYTHON) -m unittest discover -s tests -v
 	PYTHON=$(PYTHON) bash tests/test-config-cli.sh
 	bash tests/test-common.sh
+	bash tests/test-orchestrator.sh
 
 bash-n:
 	@mapfile -d '' files < <(find . -type f -name '*.sh' -not -path './.git/*' -not -path './.venv/*' -print0); \
