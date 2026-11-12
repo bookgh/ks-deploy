@@ -6,7 +6,10 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 source "$ROOT/bin/common.sh"
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() {
+    printf 'FAIL: %s\n' "$*" >&2
+    exit 1
+}
 pass() { printf 'PASS: %s\n' "$*"; }
 
 cat >"$work/config" <<'EOF'

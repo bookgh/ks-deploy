@@ -26,7 +26,8 @@ ks_color() {
 }
 
 ks_log() {
-    local level="$1"; shift
+    local level="$1"
+    shift
     local line
     line="[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] [$level] $*"
     if ks_color; then
@@ -45,7 +46,10 @@ ks_log() {
 
 ks_info() { ks_log INFO "$@"; }
 ks_warn() { ks_log WARN "$@"; }
-ks_die() { ks_log ERROR "$*"; return 1; }
+ks_die() {
+    ks_log ERROR "$*"
+    return 1
+}
 
 ks_on_error() {
     local status="$1" command="$2" line="$3"
@@ -85,7 +89,7 @@ ks_config_load() {
             return 1
         fi
         case "$key" in
-            CLUSTER_NAME|INSTALL_NODE_IP|MASTER_NODES|WORKER_NODES|SSH_USER|SSH_PORT|CADDY_BIND|CADDY_PORT|CADDY_ROOT|POD_CIDR|SERVICE_CIDR|CLUSTER_DNS|CLUSTER_DOMAIN|NODELOCAL_DNS_IP|CONTAINER_RUNTIME|PROXY_MODE|IMAGE_MODE|OFFLINE_MODE|HARBOR_ENABLED|HARBOR_NODE_IP|HARBOR_DOMAIN|HARBOR_SCHEME|HARBOR_PROJECT|SELINUX_DISABLE|FIREWALLD_UNINSTALL|PKI_DIR|ARTIFACTS_ROOT|KUBELET_ROOT|CONTAINERD_ROOT|DOCKER_ROOT|ETCD_DATA_DIR) ;;
+            CLUSTER_NAME | INSTALL_NODE_IP | MASTER_NODES | WORKER_NODES | SSH_USER | SSH_PORT | CADDY_BIND | CADDY_PORT | CADDY_ROOT | POD_CIDR | SERVICE_CIDR | CLUSTER_DNS | CLUSTER_DOMAIN | NODELOCAL_DNS_IP | CONTAINER_RUNTIME | PROXY_MODE | IMAGE_MODE | OFFLINE_MODE | HARBOR_ENABLED | HARBOR_NODE_IP | HARBOR_DOMAIN | HARBOR_SCHEME | HARBOR_PROJECT | SELINUX_DISABLE | FIREWALLD_UNINSTALL | PKI_DIR | ARTIFACTS_ROOT | KUBELET_ROOT | CONTAINERD_ROOT | DOCKER_ROOT | ETCD_DATA_DIR) ;;
             *)
                 ks_die "$file:$line_no：未知配置键：$key"
                 return 1
@@ -215,7 +219,7 @@ ks_ssh_exec() {
         printf -v arg '%q' "$arg"
         command+="${command:+ }$arg"
     done
-    local -a opts=( -p "${SSH_PORT:-22}" -o "ConnectTimeout=$connect_timeout" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=${SSH_KNOWN_HOSTS:-$HOME/.ssh/known_hosts}" -o ServerAliveInterval=15 -o ServerAliveCountMax=2 )
+    local -a opts=(-p "${SSH_PORT:-22}" -o "ConnectTimeout=$connect_timeout" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=${SSH_KNOWN_HOSTS:-$HOME/.ssh/known_hosts}" -o ServerAliveInterval=15 -o ServerAliveCountMax=2)
     if [[ "$KS_DRY_RUN" == true ]]; then
         ks_info "Dry-run：ssh ${SSH_USER:-root}@$host <安全引用命令>"
         return 0
