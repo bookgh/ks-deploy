@@ -6,7 +6,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf -- "$tmp"' EXIT
 ks_pki_render "$tmp/pki" smoke 'master-01=192.0.2.10' 'worker-01=192.0.2.20' '10.96.0.0/12' cluster.local false harbor.192.0.2.30.nip.io
 [[ "$(wc -l <"$tmp/pki/ca-names.txt")" -eq 3 ]]
-[[ "$(wc -l <"$tmp/pki/inventory.tsv")" -eq 12 ]]
+[[ "$(wc -l <"$tmp/pki/inventory.tsv")" -eq 14 ]]
 grep -Fq '"expiry":"876000h"' "$tmp/pki/ca/kubernetes/ca-config.json"
 grep -Fq '"127.0.0.1"' "$tmp/pki/requests/apiserver.json"
 grep -Fq '"master-01"' "$tmp/pki/requests/apiserver.json"
