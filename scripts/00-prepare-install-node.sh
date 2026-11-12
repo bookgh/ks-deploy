@@ -27,7 +27,8 @@ if [[ "$KS_DRY_RUN" != true && "$EUID" -ne 0 ]]; then
     ks_die "实际准备安装节点需要 root 权限"
 fi
 
-mapfile -t caddy_meta < <(python3 - "$CONFIG_VERSIONS" <<'PY'
+mapfile -t caddy_meta < <(
+    python3 - "$CONFIG_VERSIONS" <<'PY'
 import sys
 import yaml
 
@@ -36,7 +37,7 @@ for key in ("version", "source_url", "sha256", "signature_url", "signature_sha25
     print(component[key])
 PY
 )
-(( ${#caddy_meta[@]} == 13 )) || ks_die "无法读取 Caddy 锁定版本信息"
+((${#caddy_meta[@]} == 13)) || ks_die "无法读取 Caddy 锁定版本信息"
 version="${caddy_meta[0]}"
 archive_url="${caddy_meta[1]}"
 archive_sha="${caddy_meta[2]}"
