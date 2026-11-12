@@ -57,7 +57,8 @@
 - [~] CFSSL v1.7.0 / cfssljson v1.7.0 制品版本与 SHA256 锁定
 - [~] CFSSL CA 配置、请求渲染与证书 profile
 - [~] 02-gen-ca-and-certs.sh：三组独立 CA、组件证书、幂等逐项验证；远端分发待实现
-- [~] `tools/verify_pki.py`：SAN、EKU、链、密钥配对、权限和 876000h 有效期验证
+- [!] `bin/pki.sh`：纯 Bash 请求渲染；CFSSL 签发；OpenSSL SAN、EKU、链、密钥配对、权限和 876000h 验证（已实现，待 Linux CI 执行测试）
+- [!] `scripts/02-gen-ca-and-certs.sh`：不依赖 Python，PKI 重复执行时逐项比较请求并验证实际证书（已实现，待 Linux CI 执行测试）
 - [~] CFSSL 876000h 实际签发集成测试；已加入 CI，当前提交结果待跑
 - [ ] 11-rotate-certificates.sh
 - [~] 证书检查与权限检查脚本已实现；目标主机执行待验证
@@ -71,7 +72,7 @@
 
 `01-init-system.sh` 已生成带集群节点映射的 `/etc/hosts` 管理块、内核模块/sysctl、limits 和 Chrony 配置；由安装节点 Caddy 暴露配置文件，远端先验证 SHA256 再应用。它按 `SWAP_DISABLE` 关闭运行时 swap 并备份后注释 `/etc/fstab` swap 项。Dry-run 仅展示 SSH 命令，不创建 staging 文件。SELinux/firewalld 依据现有开关处理；SELinux 从 enforcing 转为 disabled 仍需重启，firewalld 开关为 true 时会通过 dnf 删除软件包。远端系统配置处理已移除 Python 依赖，使用 Rocky Linux 9 基础工具。该实现尚未在 Rocky Linux 9 远端节点执行，不能视为 M2 验收通过。
 
-`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。当前 `tools/render_pki.py` 与 `tools/verify_pki.py` 仍由 `02-gen-ca-and-certs.sh` 调用；部署 PKI 尚依赖 Python，与“部署脚本纯 Shell”要求冲突，必须在后续提交中迁移为 Bash/OpenSSL/CFSSL 并补充等价证书验证。现有 PKI 流程以 876000h（100×365 天）签发，使用 staging 目录校验后原子发布，PKI 已存在时只逐项验证，缺项、配置变更或损坏均停止且不覆盖。CI 已配置为下载并校验锁定的官方 CFSSL 后执行真实 CA/叶证书 duration 集成测试。PKI 仍只生成在安装节点；向 Master/Worker 保密分发证书的加密传输和 Rocky 9 实机签发/验证尚未完成。100 年证书依然有 CA 私钥长期暴露风险，轮换与到期审计仍未实现。
+`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。部署链路现由 `bin/pki.sh` 纯 Bash 渲染 CA/叶证书请求和 TSV 清单，CFSSL 签发；OpenSSL 检查 CA 约束、证书链、SAN、EKU、CN、密钥配对、权限及 876000h（100×365 天）有效期。PKI 流程使用 staging 目录校验后原子发布；PKI 已存在时比较请求配置并逐项验证证书，缺项、配置变更或损坏均停止且不覆盖。部署脚本 Python-free 静态测试与渲染 smoke test 已加入 `make test`，但本机未具备 Bash/CFSSL 执行环境，需由 Linux CI 实测；Python 配置 schema 校验仍是开发/CI 工具，不在部署运行路径。PKI 仍只生成在安装节点；向 Master/Worker 保密分发证书的加密传输和 Rocky 9 实机签发/验证尚未完成。100 年证书依然有 CA 私钥长期暴露风险，轮换与到期审计仍未实现。
 
 ## M3：etcd、容器运行时与控制平面
 
@@ -209,3 +210,4 @@
 - 未执行/未验证：未验证 Rocky Linux 9；未实测 SSH HostKey、超时、远端退出或 HTTP 下载；未启动 Caddy。
 - 遗留风险：尚未实现文件锁、SSH key 配置、RPM repo、远端 HTTP 测试；安装脚本依赖 Rocky 9 上预装的 cosign、PyYAML、curl 等工具，需补离线依赖闭包和主机实测；不满足完整 M1 验收，更不代表集群部署完成。
 - Commit：本轮主提交 `e493360`；换行修复 `6418ec6`；错误处理及静态检查收尾 `9d8560e`、`3540965`、`b1c1829`、`cf57510`、`121ebdc`。
+

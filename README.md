@@ -2,7 +2,7 @@
 
 > Rocky Linux 9 / amd64 的 Kubernetes 原生二进制部署框架。目标 Kubernetes 版本：`v1.37.2`。禁止使用 kubeadm、k3s、RKE 等集群封装工具。
 
-**当前阶段：M1 仍在进行；M2 系统初始化与本地 PKI 生成已开始。** `scripts/01-init-system.sh` 可通过 SSH 在节点应用由 Caddy 分发并校验 SHA256 的系统配置；远端系统配置处理已使用 Bash/awk/sed，不依赖 Python。`scripts/02-gen-ca-and-certs.sh` 当前仍调用 Python PKI 渲染与验证工具，因此“部署全链路纯 Shell”尚未完成。节点间私钥保密分发、集群组件、升级和离线制品阶段尚未完成。没有 Rocky Linux 9 集群实机验收证据。
+**当前阶段：M1 仍在进行；M2 系统初始化与本地 PKI 生成已开始。** 所有部署入口（`bin/`、`scripts/`）使用 Bash 与 Rocky Linux 基础命令；PKI 请求渲染由 Bash 实现，证书由 CFSSL 签发并由 OpenSSL 验证。Python 仅用于开发配置校验/单元测试和 CI 制品辅助，不是目标节点或部署脚本运行依赖。PKI 的端到端 shell 测试已加入 `make test`，目标 Rocky Linux 9 实机验证仍未执行。节点间私钥保密分发、集群组件、升级和离线制品阶段尚未完成。
 
 ## 文档导航
 
@@ -67,3 +67,4 @@ docs/IMPLEMENTATION-PROMPT.md、docs/IMPLEMENTATION-PLAN.md，以及仓库中已
 - 离线模式必须证明制品闭包完整；禁止部署时临时联网下载离线制品。
 - 所有危险清理、证书轮换、etcd 恢复和版本回滚都必须有显式保护与操作手册。
 - 100 年证书有效期是用户给定的兼容性要求，不是安全最佳实践；必须额外设计短期叶证书轮换、CA 私钥保护和到期监控。
+

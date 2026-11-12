@@ -22,6 +22,7 @@ test:
 	bash tests/test-orchestrator.sh
 	bash tests/test-system-init-template.sh
 	bash tests/test-cfssl-duration.sh
+	bash tests/test-pki-shell.sh
 
 bash-n:
 	@mapfile -d '' files < <(find . -type f -name '*.sh' -not -path './.git/*' -not -path './.venv/*' -print0); \
