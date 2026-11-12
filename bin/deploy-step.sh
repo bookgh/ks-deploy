@@ -24,7 +24,10 @@ for arg in "$@"; do
             ;;
     esac
 done
-[[ -n "$step" ]] || { usage >&2; exit 2; }
+[[ -n "$step" ]] || {
+    usage >&2
+    exit 2
+}
 ks_init "${init_args[@]}"
 
 case "$step" in
@@ -39,7 +42,11 @@ case "$step" in
     worker-proxy) script=08-deploy-worker-nginx-proxy.sh ;;
     addons) script=09-deploy-addons.sh ;;
     check) script=10-cluster-check.sh ;;
-    *) ks_die "未知部署步骤：$step"; usage >&2; exit 2 ;;
+    *)
+        ks_die "未知部署步骤：$step"
+        usage >&2
+        exit 2
+        ;;
 esac
 
 target="$ROOT/scripts/$script"
