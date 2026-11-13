@@ -56,7 +56,8 @@
 - [~] sysctl、模块、limits、Chrony、hostname/hosts 配置；Rocky 9 实机结果待验证
 - [~] CFSSL v1.7.0 / cfssljson v1.7.0 制品版本与 SHA256 锁定
 - [~] CFSSL CA 配置、请求渲染与证书 profile
-- [~] 02-gen-ca-and-certs.sh：三组独立 CA、组件证书、幂等逐项验证；远端分发待实现
+- [!] 02-gen-ca-and-certs.sh：三组独立 CA、组件证书、幂等逐项验证；通过节点 RSA-OAEP/AES 加密包分发最小私钥集合（新增实现待 CI/实机验证）
+- [!] `bin/secret-transfer.sh`：密文经 Caddy HTTP，SSH 传递预期 SHA256；远端解密并逐文件比较、拒绝覆盖冲突
 - [!] `bin/pki.sh`：纯 Bash 请求渲染；CFSSL 签发；OpenSSL SAN、EKU、链、密钥配对、权限和 876000h 验证（已实现，待 Linux CI 执行测试）
 - [!] `scripts/02-gen-ca-and-certs.sh`：不依赖 Python，PKI 重复执行时逐项比较请求并验证实际证书（已实现，待 Linux CI 执行测试）
 - [~] CFSSL 876000h 实际签发集成测试；已加入 CI，当前提交结果待跑
@@ -72,7 +73,7 @@
 
 `01-init-system.sh` 已生成带集群节点映射的 `/etc/hosts` 管理块、内核模块/sysctl、limits 和 Chrony 配置；由安装节点 Caddy 暴露配置文件，远端先验证 SHA256 再应用。它按 `SWAP_DISABLE` 关闭运行时 swap 并备份后注释 `/etc/fstab` swap 项。Dry-run 仅展示 SSH 命令，不创建 staging 文件。SELinux/firewalld 依据现有开关处理；SELinux 从 enforcing 转为 disabled 仍需重启，firewalld 开关为 true 时会通过 dnf 删除软件包。远端系统配置处理已移除 Python 依赖，使用 Rocky Linux 9 基础工具。该实现尚未在 Rocky Linux 9 远端节点执行，不能视为 M2 验收通过。
 
-`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。部署链路现由 `bin/pki.sh` 纯 Bash 渲染 CA/叶证书请求和 TSV 清单，CFSSL 签发；OpenSSL 检查 CA 约束、证书链、SAN、EKU、CN、密钥配对、权限及 876000h（100×365 天）有效期。PKI 流程使用 staging 目录校验后原子发布；PKI 已存在时比较请求配置并逐项验证证书，缺项、配置变更或损坏均停止且不覆盖。部署脚本 Python-free 静态测试与渲染 smoke test 已加入 `make test`，GitHub Actions 的配置校验和测试阶段通过（含 22 项 Python 单测、shell 渲染 smoke test、CFSSL duration 测试）；本机无 Bash，未做本地实测。完整 ShellCheck/shfmt 阶段按用户指示延后，当前 workflow 在既有 `scripts/lib/01-init-system-remote.sh` ShellCheck 项失败，不作为本次 PKI 测试结果。Python 配置 schema 校验仍是开发/CI 工具，不在部署运行路径。PKI 仍只生成在安装节点；向 Master/Worker 保密分发证书的加密传输和 Rocky 9 实机签发/验证尚未完成。100 年证书依然有 CA 私钥长期暴露风险，轮换与到期审计仍未实现。
+`versions.yaml` 已锁定官方 CFSSL v1.7.0 / cfssljson v1.7.0 Linux amd64 制品 SHA256。部署链路现由 `bin/pki.sh` 纯 Bash 渲染 CA/叶证书请求和 TSV 清单，CFSSL 签发；OpenSSL 检查 CA 约束、证书链、SAN、EKU、KeyUsage、CN、密钥配对、权限及 876000h（100×365 天）有效期。PKI 流程使用 staging 目录校验后原子发布；PKI 已存在时比较请求配置并逐项验证证书，缺项、配置变更或损坏均停止且不覆盖。`bin/secret-transfer.sh` 为每节点生成 RSA-OAEP/AES 加密传输包，远端校验经 SSH 传入的密文/明文 SHA256，解密后拒绝路径穿越、链接、覆盖和不安全权限；CA 私钥、admin 凭据不进入节点包。该新传输实现及其密码学往返测试已加入 `make test`，待当前 Linux CI 执行；本机无 Bash，未做本地实测。此前 CI 已通过 PKI 请求渲染和 CFSSL 有效期测试；完整 ShellCheck/shfmt 阶段按用户指示延后，已知既有系统初始化模板有 ShellCheck 报告。Python 配置 schema 校验仍是开发/CI 工具，不在部署运行路径。真实 SSH/Caddy 传输、节点证书安装与 Rocky 9 实机验收仍未完成。100 年证书提高 CA 私钥长期暴露风险；传输 RSA 私钥备份/轮换和证书轮换、到期审计仍未实现。
 
 ## M3：etcd、容器运行时与控制平面
 

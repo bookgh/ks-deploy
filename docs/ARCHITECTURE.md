@@ -129,6 +129,8 @@ SSH 仅负责远程命令执行和 SSH 公钥配置；软件、二进制、Chart
 
 `pki/` 存在时逐项校验，不可整个目录存在就无条件跳过；缺项/损坏时停止并要求显式修复策略，不得静默覆盖 CA 私钥。私钥目录 0700、私钥文件 0600。PKI 不得放入 Caddy 公共根目录。
 
+远端私有证书不得明文放入 Caddy 根目录。实现为每个节点首次通过 SSH 创建 3072 位 RSA 接收密钥；安装节点按角色生成最小证书包，以随机 AES-256-CBC/PBKDF2 密钥加密归档，并用节点 RSA-OAEP-SHA256 公钥封装该密钥。Caddy 只提供密文和封装密钥；远端通过 SSH 收到 SHA256 后从 HTTP 下载、校验、解密并逐文件安全安装。此校验依赖 SSH HostKey/会话可信；HTTP 仍为明文传输密文，不能替代签名或受信网络。admin 凭据与 CA 私钥不分发。传输密钥长期保存于节点 PKI 目录的 `.transport/` 下，需纳入备份、权限检查和轮换策略。
+
 ## 6. etcd 与控制平面
 
 etcd 使用官方独立二进制，复用 Master 节点，数据目录与二进制目录分离，ETCD CA 双向 TLS。成员名、peer/client URL、数据目录、快照策略均配置化。Systemd 托管并设置 OOMScore、LimitNOFILE、LimitNPROC、journald。安装后检查 endpoint health/status/member list；定期快照并做恢复演练。成员增删和 quorum 恢复使用专门流程，不得通过清空数据目录修复。

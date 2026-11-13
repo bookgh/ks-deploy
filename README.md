@@ -2,7 +2,7 @@
 
 > Rocky Linux 9 / amd64 的 Kubernetes 原生二进制部署框架。目标 Kubernetes 版本：`v1.37.2`。禁止使用 kubeadm、k3s、RKE 等集群封装工具。
 
-**当前阶段：M1 仍在进行；M2 系统初始化与本地 PKI 生成已开始。** 所有部署入口（`bin/`、`scripts/`）使用 Bash 与 Rocky Linux 基础命令；PKI 请求渲染由 Bash 实现，证书由 CFSSL 签发并由 OpenSSL 验证。Python 仅用于开发配置校验/单元测试和 CI 制品辅助，不是目标节点或部署脚本运行依赖。PKI 的端到端 shell 测试已加入 `make test`，目标 Rocky Linux 9 实机验证仍未执行。节点间私钥保密分发、集群组件、升级和离线制品阶段尚未完成。
+**当前阶段：M1 仍在进行；M2 系统初始化与 PKI 部署已开始。** 所有部署入口（`bin/`、`scripts/`）使用 Bash 与 Rocky Linux 基础命令；PKI 请求渲染由 Bash 实现，证书由 CFSSL 签发并由 OpenSSL 验证。PKI 证书按节点角色经 RSA-OAEP/AES 加密后由 Caddy 提供密文下载；CA 私钥和 admin 凭据保留在安装节点。Python 仅用于开发配置校验/单元测试和 CI 制品辅助，不是目标节点或部署脚本运行依赖。纯 Shell PKI/加密自测已加入 `make test`，新增远端传输路径待 Linux CI 验证；真实 SSH/Caddy 传输与 Rocky Linux 9 集群验收尚未执行。集群组件、升级和离线制品阶段尚未完成。
 
 ## 文档导航
 

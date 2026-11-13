@@ -61,5 +61,6 @@ if grep -RniE 'python(3)?' "$ROOT/scripts" "$ROOT/bin"; then
     printf 'FAIL: deployment entrypoints may not require Python\n' >&2
     exit 1
 fi
+bash "$ROOT/tests/test-secret-transfer.sh"
 printf 'PASS: pure-shell PKI request rendering and deployment Python-free policy\n'
 

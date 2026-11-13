@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ "$(uname -m)" == x86_64 ]] || { echo "目标架构不是 amd64" >&2; exit 41; }
 source /etc/os-release
 [[ "${ID:-}" == rocky && "${VERSION_ID%%.*}" == 9 ]] || { echo "目标系统不是 Rocky Linux 9" >&2; exit 42; }
-for command in curl sha256sum install sysctl modprobe systemctl hostnamectl grep cmp cp date swapon awk sed; do
+for command in curl sha256sum openssl tar stat find install sysctl modprobe systemctl hostnamectl grep cmp cp date swapon awk sed; do
     command -v "$command" >/dev/null 2>&1 || { echo "缺少命令：$command" >&2; exit 43; }
 done
 [[ -x /usr/sbin/chronyd || -x /usr/bin/chronyd ]] || { echo "未安装 chrony，请先准备 Rocky 9 RPM 依赖" >&2; exit 44; }
@@ -98,3 +98,4 @@ if [[ "$swap_disable" == true ]]; then
     [[ -z "$(swapon --show --noheadings)" ]] || { echo "swap 仍处于启用状态" >&2; exit 50; }
 fi
 printf "系统初始化完成：%s\\n" "$node_name"
+
