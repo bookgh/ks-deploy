@@ -38,7 +38,7 @@ EOF
 ks_pki_render() {
     local root="$1" cluster="$2" masters="$3" workers="$4" service_cidr="$5" domain="$6" harbor_enabled="$7" harbor_domain="$8"
     local item name ip ca profile cn org ou hosts service_ip ca_name
-    install -d -m 0700 "$root/ca" "$root/requests"
+    install -d -m 0700 "$root" "$root/ca" "$root/requests"
     : >"$root/inventory.tsv"; chmod 0600 "$root/inventory.tsv"
     printf '%s\n' kubernetes etcd front-proxy >"$root/ca-names.txt"
     [[ "$harbor_enabled" != true ]] || printf '%s\n' harbor >>"$root/ca-names.txt"
