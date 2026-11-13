@@ -110,6 +110,8 @@ ks_pki_verify() {
             [[ "$san_count" -eq 0 ]] || { ks_die "不应包含 SAN 的证书存在额外 SAN：$name"; return 1; }
         fi
         text="$(openssl x509 -in "$cert" -noout -text)"
+        grep -q 'Digital Signature' <<<"$text" || { ks_die "证书 KeyUsage 缺少 Digital Signature：$name"; return 1; }
+        grep -q 'Key Encipherment' <<<"$text" || { ks_die "证书 KeyUsage 缺少 Key Encipherment：$name"; return 1; }
         case "$profile" in
             server) grep -q 'TLS Web Server Authentication' <<<"$text" || { ks_die "证书缺少 serverAuth：$name"; return 1; } ;;
             client) grep -q 'TLS Web Client Authentication' <<<"$text" || { ks_die "证书缺少 clientAuth：$name"; return 1; } ;;
