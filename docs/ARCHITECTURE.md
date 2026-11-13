@@ -97,7 +97,15 @@ KUBELET_ROOT="/var/lib/kubelet"
 CONTAINERD_ROOT="/var/lib/containerd"
 DOCKER_ROOT="/var/lib/docker"
 ETCD_DATA_DIR="/var/lib/etcd"
+ETCD_BIN_ROOT="/opt/ks-deploy/etcd"
+ETCD_CONFIG_DIR="/etc/etcd"
+ETCD_SNAPSHOT_DIR="/var/backups/etcd"
+ETCD_CLIENT_PORT="2379"
+ETCD_PEER_PORT="2380"
+ETCD_SNAPSHOT_HOUR="2"
 ```
+
+etcd 使用 `versions.yaml` 中精确锁定的官方 Linux amd64 制品。Master 全部完成二进制、配置和 TLS 文件准备后才启动成员，再逐节点检查 mTLS 健康、成员数和可读快照。数据目录与二进制版本目录分离；自动部署不得删除或覆盖数据。每日快照保留策略尚未配置，必须监控备份目录容量并定期执行恢复演练。
 
 Master/Worker 使用节点数组定义名称、IP、SSH 用户、角色、etcd member 名称。Master 数量由数组决定；etcd 成员通常采用奇数并确保 quorum。安装节点 IP 与集群节点 IP 分开定义。
 

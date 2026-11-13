@@ -15,6 +15,10 @@ kubernetes:
     - kube-proxy
     - kubectl
 components:
+  etcd:
+    version: v3.7.0
+    source_url: https://github.com/etcd-io/etcd/releases/download/v3.7.0/etcd-v3.7.0-linux-amd64.tar.gz
+    sha256: b05cb07f5686dab8f9cdab89986b44f0dd24aaf5c627176aff325e21fa56f9f0
   cfssl:
     version: v1.7.0
     source_url: https://github.com/cloudflare/cfssl/releases/download/v1.7.0/cfssl_1.7.0_linux_amd64

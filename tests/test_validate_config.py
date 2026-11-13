@@ -113,6 +113,19 @@ class ConfigValidatorTests(unittest.TestCase):
         errors = self.validate(env=bad_env)
         self.assertTrue(any("CHRONY_SERVERS" in error for error in errors), errors)
 
+    def test_invalid_etcd_port_and_snapshot_hour_are_rejected(self) -> None:
+        bad_env = self.env.replace("ETCD_CLIENT_PORT=2379", "ETCD_CLIENT_PORT=2380")
+        bad_env = bad_env.replace("ETCD_PEER_PORT=2380", "ETCD_PEER_PORT=2380", 1)
+        bad_env = bad_env.replace("ETCD_SNAPSHOT_HOUR=2", "ETCD_SNAPSHOT_HOUR=24")
+        errors = self.validate(env=bad_env)
+        self.assertTrue(any("ETCD_CLIENT_PORT 与 ETCD_PEER_PORT" in error for error in errors), errors)
+        self.assertTrue(any("ETCD_SNAPSHOT_HOUR" in error for error in errors), errors)
+
+    def test_overlapping_etcd_paths_are_rejected(self) -> None:
+        bad_env = self.env.replace("ETCD_BIN_ROOT=/opt/ks-deploy/etcd", "ETCD_BIN_ROOT=/var/lib/etcd/bin")
+        errors = self.validate(env=bad_env)
+        self.assertTrue(any("ETCD_DATA_DIR / ETCD_BIN_ROOT" in error for error in errors), errors)
+
     def test_locked_chart_without_version_is_rejected(self) -> None:
         bad_charts = self.charts.replace("version_lock_status: pending", "version_lock_status: locked", 1)
         errors = self.validate(charts=bad_charts)

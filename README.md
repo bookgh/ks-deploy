@@ -34,6 +34,8 @@ make check
 
 `cluster.env` 使用严格的 `KEY=value` 格式，配置校验器不会执行其中的内容。公共 Bash 库也只解析允许列表中的字面值，不使用 `source` 或 `eval`。`versions.yaml` 是组件版本的唯一事实源；Caddy `v2.11.9` 与 CFSSL `v1.7.0` 已锁定官方 amd64 制品地址和 SHA256。Chart 只有在完成兼容性审查后才能设置精确版本并标记为 `locked`。详细说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
+部署入口、远端执行脚本使用 Bash，不依赖 Python；Python 仅用于开发期配置校验和 CI 工具。当前 etcd 步骤已实现官方版本校验、远端 mTLS/systemd 部署及每日快照，实机测试与恢复演练仍未完成，详见 [实施计划](docs/IMPLEMENTATION-PLAN.md)。
+
 CI 在 push 到 `main`、Pull Request 和手动触发时执行配置校验、Python 单元测试、`bash -n`、ShellCheck 与 shfmt。CI 不会构建或发布 Release。
 
 ## 从新会话继续

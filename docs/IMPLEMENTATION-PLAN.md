@@ -78,12 +78,14 @@
 ## M3：etcd、容器运行时与控制平面
 
 **范围**
-- [ ] 04-deploy-etcd.sh
+- [!] 04-deploy-etcd.sh：etcd 3.7.0 官方锁定制品、mTLS、systemd、每日快照和健康检查（shell 测试已接入，待 CI）
 - [ ] 06-deploy-container-runtime.sh（containerd）
 - [ ] Docker + cri-dockerd 可选路径
 - [ ] 05-deploy-k8s-control-plane.sh
 - [ ] Systemd templates
 - [ ] kubeconfig 生成器
+
+etcd 当前实现只覆盖 M3 的 etcd 部分：安装节点按三阶段编排 Master（全节点准备、启动、健康/成员/快照检查）；远端通过 Caddy HTTP 下载并校验归档，不接收 SCP/rsync 文件。独立版本目录、冲突二进制保护、现有数据目录保护、mTLS、systemd 资源限制与每日快照已实现。快照不会自动清理，需监控磁盘容量。当前没有 Rocky 9 集群可供实机验证；本机也没有 Bash，因此新脚本仅接入 CI 的 `bash -n` 和纯 shell 静态不变量测试，状态保持未验证。部署阶段不调用 Python；Python 配置校验仅用于开发/CI。
 
 **验收**
 - etcd 多成员健康、TLS、快照与恢复演练通过。
@@ -211,4 +213,14 @@
 - 未执行/未验证：未验证 Rocky Linux 9；未实测 SSH HostKey、超时、远端退出或 HTTP 下载；未启动 Caddy。
 - 遗留风险：尚未实现文件锁、SSH key 配置、RPM repo、远端 HTTP 测试；安装脚本依赖 Rocky 9 上预装的 cosign、PyYAML、curl 等工具，需补离线依赖闭包和主机实测；不满足完整 M1 验收，更不代表集群部署完成。
 - Commit：本轮主提交 `e493360`；换行修复 `6418ec6`；错误处理及静态检查收尾 `9d8560e`、`3540965`、`b1c1829`、`cf57510`、`121ebdc`。
+
+### M3 etcd 部分 - 2026-11-13
+- 状态：etcd 部署代码已实现，自动化测试待 CI；生产集群验收未执行。
+- 变更文件：`versions.yaml`、`cluster.env.example`、`bin/common.sh`、`tools/validate_config.py`、`scripts/04-deploy-etcd.sh`、`scripts/lib/04-etcd-node.sh`、`tests/test-etcd-shell.sh`、`Makefile`、`README.md`、`docs/ARCHITECTURE.md`、本文档。
+- 实现内容：锁定 etcd v3.7.0 官方 amd64 制品及 SHA256；安装节点按准备/启动/检查顺序调度；远端 HTTP 拉取并校验、mTLS、版本隔离二进制、systemd 限额、定时快照和健康/成员检查；不清理 etcd 数据。部署脚本为纯 Bash。
+- 验证命令：`python tools/validate_config.py --env cluster.env.example --versions versions.yaml --charts charts.yaml`；CI 中 `make test`、`make bash-n`。
+- 验证结果：配置校验和 CI 结果待本次提交后确认；本机缺少 Bash，无法执行脚本测试或语法检查。
+- 未执行/未验证：Rocky Linux 9、多 Master quorum、快照恢复、真实 HTTP/SSH、systemd hardening；ShellCheck/shfmt 按用户指示延后。
+- 遗留风险：etcd 快照无限保留；现存集群滚动升级尚未实现；PKI 轮换/到期告警尚未实现。
+- Commit：本条记录随代码提交归档。
 

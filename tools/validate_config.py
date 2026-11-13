@@ -21,10 +21,11 @@ ENV_KEYS = {
     "OFFLINE_MODE", "HARBOR_ENABLED", "HARBOR_NODE_IP", "HARBOR_DOMAIN",
     "HARBOR_SCHEME", "HARBOR_PROJECT", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL", "SWAP_DISABLE",
     "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT",
-    "DOCKER_ROOT", "ETCD_DATA_DIR",
+    "DOCKER_ROOT", "ETCD_DATA_DIR", "ETCD_BIN_ROOT", "ETCD_CONFIG_DIR",
+    "ETCD_SNAPSHOT_DIR", "ETCD_CLIENT_PORT", "ETCD_PEER_PORT", "ETCD_SNAPSHOT_HOUR",
 }
 BOOLEAN_KEYS = {"OFFLINE_MODE", "HARBOR_ENABLED", "SELINUX_DISABLE", "FIREWALLD_UNINSTALL", "SWAP_DISABLE"}
-PATH_KEYS = {"CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"}
+PATH_KEYS = {"CADDY_ROOT", "CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "ARTIFACTS_ROOT", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR", "ETCD_BIN_ROOT", "ETCD_CONFIG_DIR", "ETCD_SNAPSHOT_DIR"}
 NUMERIC_IDENTIFIER = r"(?:0|[1-9][0-9]*)"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 BUILD_IDENTIFIER = r"[0-9A-Za-z-]+"
@@ -145,13 +146,20 @@ def validate_env(values: dict[str, str]) -> list[str]:
     ):
         errors.append("CHRONY_SERVERS: 必须是以逗号分隔的主机名或 IPv4 地址")
 
-    for key in ("SSH_PORT", "CADDY_PORT"):
+    for key in ("SSH_PORT", "CADDY_PORT", "ETCD_CLIENT_PORT", "ETCD_PEER_PORT"):
         try:
             port = int(values.get(key, ""))
             if not 1 <= port <= 65535:
                 raise ValueError
         except ValueError:
             errors.append(f"{key}: 必须是 1-65535 范围内的端口")
+    if values.get("ETCD_CLIENT_PORT") == values.get("ETCD_PEER_PORT"):
+        errors.append("ETCD_CLIENT_PORT 与 ETCD_PEER_PORT 必须不同")
+    try:
+        if not 0 <= int(values.get("ETCD_SNAPSHOT_HOUR", "")) <= 23:
+            raise ValueError
+    except ValueError:
+        errors.append("ETCD_SNAPSHOT_HOUR: 必须是 0-23 范围内的小时")
 
     try:
         bind_ip = ipaddress.ip_address(values.get("CADDY_BIND", ""))
@@ -251,10 +259,20 @@ def validate_env(values: dict[str, str]) -> list[str]:
     caddy_root = Path(values.get("CADDY_ROOT", "/"))
     if caddy_root == Path("/"):
         errors.append("CADDY_ROOT: 不得指向文件系统根目录")
-    for key in ("CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR"):
+    for key in ("CADDY_CONFIG_DIR", "CADDY_BIN_ROOT", "PKI_DIR", "KUBELET_ROOT", "CONTAINERD_ROOT", "DOCKER_ROOT", "ETCD_DATA_DIR", "ETCD_BIN_ROOT", "ETCD_CONFIG_DIR", "ETCD_SNAPSHOT_DIR"):
         protected = Path(values.get(key, "/"))
         if protected == caddy_root or caddy_root in protected.parents:
             errors.append(f"CADDY_ROOT: 不得包含敏感或运行时数据路径 {key}")
+
+    etcd_paths = ("ETCD_DATA_DIR", "ETCD_BIN_ROOT", "ETCD_CONFIG_DIR", "ETCD_SNAPSHOT_DIR", "PKI_DIR")
+    for index, left_key in enumerate(etcd_paths):
+        left = Path(values.get(left_key, "/"))
+        if left == Path("/"):
+            errors.append(f"{left_key}: 不得指向文件系统根目录")
+        for right_key in etcd_paths[index + 1:]:
+            right = Path(values.get(right_key, "/"))
+            if left == right or left in right.parents or right in left.parents:
+                errors.append(f"etcd 数据、二进制、配置、快照与 PKI 路径不得重叠：{left_key} / {right_key}")
 
     return errors
 
