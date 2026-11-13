@@ -32,13 +32,13 @@ ks_pki_request() {
 {"CN":"$(ks_pki_json_string "$cn")","hosts":[$json_hosts],"key":{"algo":"rsa","size":2048},"names":[{"C":"US","O":"$(ks_pki_json_string "$org")"$( [[ -n "$ou" ]] && printf ',"OU":"%s"' "$(ks_pki_json_string "$ou")" )}]}
 EOF
     chmod 0600 "$root/requests/$name.json"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ca" "$profile" "${cn:--}" "${org:--}" "${hosts:--}" >>"$root/inventory.tsv"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ca" "$profile" "${cn:--}" "${org:--}" "${ou:--}" "${hosts:--}" >>"$root/inventory.tsv"
 }
 
 ks_pki_render() {
     local root="$1" cluster="$2" masters="$3" workers="$4" service_cidr="$5" domain="$6" harbor_enabled="$7" harbor_domain="$8"
     local item name ip ca profile cn org ou hosts service_ip ca_name
-    install -d -m 0700 "$root/ca" "$root/requests"
+    install -d -m 0700 "$root" "$root/ca" "$root/requests"
     : >"$root/inventory.tsv"; chmod 0600 "$root/inventory.tsv"
     printf '%s\n' kubernetes etcd front-proxy >"$root/ca-names.txt"
     [[ "$harbor_enabled" != true ]] || printf '%s\n' harbor >>"$root/ca-names.txt"
@@ -87,7 +87,7 @@ ks_pki_verify() {
         ks_pki_check_duration "$cert" "$expected"
     done <"$root/ca-names.txt"
     while IFS=$'\t' read -r name ca profile cn org ou hosts; do
-        [[ "$cn" != - ]] || cn=""; [[ "$org" != - ]] || org=""; [[ "$hosts" != - ]] || hosts=""
+        [[ "$cn" != - ]] || cn=""; [[ "$org" != - ]] || org=""; [[ "$ou" != - ]] || ou=""; [[ "$hosts" != - ]] || hosts=""
         cert="$root/certs/$name.pem"; key="$root/certs/$name-key.pem"; ca="$root/ca/$ca/ca.pem"
         [[ -s "$cert" && -s "$key" && "$(stat -c '%a' "$key")" == 600 ]] || { ks_die "叶证书缺失或权限错误：$name"; return 1; }
         openssl verify -CAfile "$ca" "$cert" >/dev/null
@@ -96,6 +96,7 @@ ks_pki_verify() {
         text="$(openssl x509 -in "$cert" -noout -subject -nameopt RFC2253)"
         [[ -z "$cn" ]] || grep -Fq "CN=$cn" <<<"$text" || { ks_die "证书 CN 不匹配：$name"; return 1; }
         [[ -z "$org" ]] || grep -Fq "O=$org" <<<"$text" || { ks_die "证书 Organization 不匹配：$name"; return 1; }
+        [[ -z "$ou" ]] || grep -Fq "OU=$ou" <<<"$text" || { ks_die "证书 Organizational Unit 不匹配：$name"; return 1; }
         if [[ -n "$hosts" ]]; then
             IFS=',' read -r -a expected_hosts <<<"$hosts"
             expected_san_count="${#expected_hosts[@]}"
