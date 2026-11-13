@@ -35,6 +35,6 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass "file:$tmp/encrypted/pass
     -in "$tmp/encrypted/payload.enc" -out "$tmp/decrypted/payload.tar.gz"
 printf '%s  %s\n' "${digests[0]}" "$tmp/decrypted/payload.tar.gz" | sha256sum --check --status
 tar -xzf "$tmp/decrypted/payload.tar.gz" --no-same-owner -C "$tmp/decrypted/unpack"
-cmp -r "$tmp/master" "$tmp/decrypted/unpack"
+diff -r "$tmp/master" "$tmp/decrypted/unpack"
 printf 'PASS: per-node PKI bundle boundaries and RSA-OAEP/AES-256 encrypted archive round trip\n'
 
